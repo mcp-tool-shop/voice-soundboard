@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "voice-soundboard": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "F:/AI/voice-soundboard",
+        "run",
+        "python",
+        "-m",
+        "voice_soundboard.server"
+      ]
+    }
+  }
+}
