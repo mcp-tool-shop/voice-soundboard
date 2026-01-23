@@ -5,10 +5,10 @@ Curated voice presets combining formant shifting and subtle humanization.
 Based on acoustic research of notable speakers and voice archetypes.
 
 Reference Sources:
-- Morgan Freeman, James Earl Jones, Obama: ~96 Hz F0 (deep male)
+- Deep authoritative male voices: ~96 Hz F0
 - Average male: 100-130 Hz F0
 - Average female: 180-230 Hz F0
-- Husky female (Scarlett Johansson): lower end ~165-180 Hz
+- Husky female voices: lower end ~165-180 Hz
 - Children: higher F0, shorter vocal tract = higher formants
 - Elderly: F0 increases in males, decreases in females with age
 
@@ -46,15 +46,14 @@ class VoicePreset(Enum):
     WARM_NARRATOR = "warm_narrator"
     """
     Warm, trustworthy narrator voice.
-    Based on: David Attenborough's documentary style
+    Documentary narrator style with slight warmth.
     F0 reference: ~110 Hz, slight formant lowering for warmth
     """
 
     DEEP_AUTHORITY = "deep_authority"
     """
     Deep, commanding authority voice.
-    Based on: Morgan Freeman, James Earl Jones (~96 Hz F0)
-    The "voice of God" archetype - deep, resonant, authoritative
+    Deep resonant voice (~96 Hz F0) - authoritative and engaging.
     """
 
     ENERGETIC_HOST = "energetic_host"
@@ -80,8 +79,7 @@ class VoicePreset(Enum):
     HUSKY_INTIMATE = "husky_intimate"
     """
     Husky, intimate voice.
-    Based on: Scarlett Johansson's characteristic lower female voice
-    Slightly lower formants, breathier quality
+    Lower register with slight breathiness - works best with female voices.
     """
 
     CHILD_LIKE = "child_like"
@@ -182,7 +180,7 @@ PRESET_CONFIGS = {
 
     VoicePreset.WARM_NARRATOR: PresetConfig(
         name="Warm Narrator",
-        description="Warm, trustworthy documentary narrator (David Attenborough style)",
+        description="Warm, trustworthy documentary narrator",
         formant_ratio=0.96,  # Slightly deeper for warmth
         breath_intensity=0.12,
         breath_volume_db=-30.0,
@@ -195,7 +193,7 @@ PRESET_CONFIGS = {
 
     VoicePreset.DEEP_AUTHORITY: PresetConfig(
         name="Deep Authority",
-        description="Deep, authoritative voice (Neil deGrasse Tyson style - engaging and gravelly)",
+        description="Deep, authoritative voice - engaging and gravelly",
         formant_ratio=0.86,  # Deep but graceful
         breath_intensity=0.12,
         breath_volume_db=-30.0,
@@ -249,7 +247,7 @@ PRESET_CONFIGS = {
 
     VoicePreset.HUSKY_INTIMATE: PresetConfig(
         name="Husky Intimate",
-        description="Husky, intimate voice (Scarlett Johansson style)",
+        description="Husky, intimate voice - best with female speakers",
         formant_ratio=0.97,  # Slightly lower for huskiness
         breath_intensity=0.18,
         breath_volume_db=-26.0,
@@ -425,7 +423,7 @@ def apply_narrator(audio, sample_rate=None):
 
 
 def apply_authority(audio, sample_rate=None):
-    """Apply deep authority preset (Morgan Freeman style)."""
+    """Apply deep authority preset."""
     return apply_preset(audio, VoicePreset.DEEP_AUTHORITY, sample_rate)
 
 
