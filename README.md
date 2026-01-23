@@ -4,7 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Security: Audited](https://img.shields.io/badge/security-audited-green.svg)](SECURITY_AUDIT.md)
-[![Tests: 876](https://img.shields.io/badge/tests-876%20defined-brightgreen.svg)](TEST_PLAN.md)
+[![Tests: 1195](https://img.shields.io/badge/tests-1195%20defined-brightgreen.svg)](TEST_PLAN.md)
 [![MCP Compatible](https://img.shields.io/badge/MCP-compatible-purple.svg)](https://modelcontextprotocol.io/)
 
 **AI-powered voice synthesis with natural language control.** Give AI agents expressive, human-like voices with 54+ voices, 19 emotions, real-time streaming, voice cloning, and multi-speaker dialogue.
@@ -31,6 +31,7 @@ engine.speak("Hello! How can I help you today?", style="warmly and cheerfully")
 | **Mobile Web UI** | Access from phone/tablet via responsive web interface |
 | **MCP Integration** | 40+ tools for AI agent integration |
 | **Security Hardened** | Path validation, rate limiting, XXE protection |
+| **Vocology Module** | Voice humanization, formant shifting, rhythm analysis |
 
 ---
 
@@ -245,6 +246,47 @@ print(list_effects())  # ['chime', 'success', 'error', 'attention', ...]
 
 # Play an effect
 play_effect("success")
+```
+
+### Voice Humanization (NEW in v1.2.0)
+
+Make TTS output sound more natural with breath insertion, pitch variation, and formant shifting:
+
+```python
+from voice_soundboard.vocology import VoiceHumanizer, FormantShifter
+
+# Full humanization pipeline (breaths + pitch micro-variation)
+humanizer = VoiceHumanizer()
+audio, sr = humanizer.humanize(tts_audio, sample_rate=24000)
+
+# Make voice deeper or brighter
+shifter = FormantShifter()
+deeper, sr = shifter.shift(audio, ratio=0.90, sample_rate=sr)   # 10% deeper
+brighter, sr = shifter.shift(audio, ratio=1.10, sample_rate=sr) # 10% brighter
+
+# Emotional presets
+from voice_soundboard.vocology import HumanizeConfig, EmotionalState
+
+config = HumanizeConfig.for_emotion(EmotionalState.EXCITED)
+excited_audio, sr = humanizer.humanize(audio, config=config, sample_rate=sr)
+```
+
+### Rhythm Analysis (NEW in v1.2.0)
+
+Analyze speech rhythm using classical metrics and Rhythm Zone Theory:
+
+```python
+from voice_soundboard.vocology import RhythmAnalyzer
+
+analyzer = RhythmAnalyzer(sample_rate=24000)
+metrics = analyzer.analyze_metrics(audio)
+
+print(f"nPVI: {metrics.npvi_v:.1f}")      # Rhythm variability index
+print(f"Speech rate: {metrics.speech_rate:.1f} syll/sec")
+
+# Rhythm Zone Theory analysis
+rzt = analyzer.analyze_rzt(audio)
+print(f"Syllable rhythm: {rzt.syllable_rhythm:.1f} Hz")
 ```
 
 ---

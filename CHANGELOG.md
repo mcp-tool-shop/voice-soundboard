@@ -5,6 +5,70 @@ All notable changes to Voice Soundboard will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-23
+
+### The "Voice Science" Release
+
+This release introduces the **Vocology Module** - a comprehensive voice science toolkit for analyzing and manipulating voice characteristics. Make TTS output sound more human with breath insertion, pitch micro-variation, and formant shifting.
+
+### Added
+
+#### Vocology Module (`voice_soundboard.vocology`)
+
+**Voice Humanization** (tested 9/10)
+- `VoiceHumanizer` - Full humanization pipeline with breath insertion + pitch variation
+- `BreathInserter` - Intelligent breath placement at phrase boundaries
+- `BreathGenerator` - Natural breath sound synthesis
+- `PitchHumanizer` - Micro-jitter, drift, and pitch scooping
+- 7 emotional presets: NEUTRAL, EXCITED, CALM, TIRED, ANXIOUS, CONFIDENT, INTIMATE
+
+**Formant Shifting** (tested 9/10)
+- `FormantShifter` - Make voices deeper or brighter
+- Preserves voice identity while shifting timbre
+- Ratio-based control (0.9 = 10% deeper, 1.1 = 10% brighter)
+
+**Rhythm Analysis**
+- `RhythmAnalyzer` - Compute speech rhythm metrics
+- nPVI (Normalized Pairwise Variability Index) for rhythm classification
+- Rhythm Zone Theory (RZT) analysis with band energy detection
+- Speech rate, vocalic percentage, delta metrics
+- Automatic rhythm classification: stress-timed, syllable-timed, mora-timed
+
+**Voice Quality Analysis**
+- `VoiceQualityAnalyzer` - Jitter, shimmer, HNR, F0 analysis
+- `VocalBiomarkers` - Fatigue detection (experimental)
+
+**Phonation Effects** (experimental - needs tuning)
+- `PhonationSynthesizer` - Breathy, creaky, whisper effects
+- Currently too intense at default settings
+
+#### Documentation
+- 13 new vocology guides in `docs/vocology/`
+- Voice metrics reference with normative values by gender/age/language
+- Prosody deep-dive covering RZT, ToBI, neural oscillations
+- Preset library roadmap for v1.4.0
+
+#### Testing
+- 165 new tests for Phase 10 (Humanization & Rhythm)
+- 17 test batch files for vocology module
+- Total tests: 1195 (up from 876)
+
+### Usage
+
+```python
+from voice_soundboard.vocology import VoiceHumanizer, FormantShifter
+
+# Humanize TTS output
+humanizer = VoiceHumanizer()
+audio, sr = humanizer.humanize(tts_audio, sample_rate=24000)
+
+# Make voice deeper
+shifter = FormantShifter()
+deeper, sr = shifter.shift(audio, ratio=0.90, sample_rate=sr)
+```
+
+---
+
 ## [1.1.0] - 2026-01-23
 
 ### The "Multilingual Voice Cloning" Release
