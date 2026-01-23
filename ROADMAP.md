@@ -576,6 +576,72 @@ pipeline.allow_barge_in = True
 
 ---
 
+## Phase 8: F5-TTS & Chatterbox Multilingual
+
+**Priority**: 🔥 High
+**Effort**: Medium
+**Impact**: Global reach, superior voice cloning
+
+### Overview
+
+Building on 2026 research for next-generation voice cloning:
+- [F5-TTS](https://arxiv.org/abs/2410.06885): Diffusion Transformer with flow matching
+- [Chatterbox Multilingual](https://github.com/resemble-ai/chatterbox): 23-language expansion
+
+### Features Implemented
+
+#### 8.1 F5-TTS Integration
+```python
+from voice_soundboard.engines import F5TTSEngine
+
+engine = F5TTSEngine()
+
+# Clone voice with transcription (best quality)
+engine.clone_voice(
+    "reference.wav",
+    voice_id="my_voice",
+    transcription="Hello, this is my reference audio."
+)
+
+# Generate with cloned voice
+result = engine.speak(
+    "Hello world!",
+    voice="my_voice",
+    cfg_strength=2.0,  # Voice adherence
+    nfe_step=32        # Quality steps
+)
+```
+
+#### 8.2 Chatterbox Multilingual
+```python
+from voice_soundboard.engines import ChatterboxEngine
+
+engine = ChatterboxEngine()  # Now multilingual by default
+
+# Speak in any of 23 languages
+result = engine.speak("Bonjour le monde!", language="fr")
+result = engine.speak("Hallo Welt!", language="de")
+result = engine.speak("こんにちは世界！", language="ja")
+
+# List supported languages
+languages = engine.list_languages()  # ['ar', 'da', 'de', 'el', ...]
+```
+
+### Implementation Tasks
+
+- [x] Create `F5TTSEngine` class implementing `TTSEngine` interface
+- [x] Add `clone_voice()` with transcription support
+- [x] Add `cfg_strength`, `nfe_step`, `sway_coef` parameters
+- [x] Update `ChatterboxEngine` for multilingual support
+- [x] Add `language` parameter to `speak()` and `speak_raw()`
+- [x] Add `CHATTERBOX_LANGUAGES` constant (23 languages)
+- [x] Add MCP tools: `speak_f5tts`, `clone_voice_f5tts`, `list_chatterbox_languages`
+- [x] Expand `Language` enum with 7 new languages
+- [x] Add 15 new `LanguageConfig` entries
+- [x] Write comprehensive tests (190 new tests)
+
+---
+
 ## Architecture Overview
 
 ### Current Architecture (v0.1.0)
@@ -722,6 +788,101 @@ voice_soundboard/
 | Phase 5: Neural Codecs | v0.6.0 | ✅ Complete |
 | Phase 6: Voice Conversion | v0.7.0 | ✅ Complete |
 | Phase 7: LLM Integration | v1.0.0 | ✅ Complete |
+| Phase 8: F5-TTS & Multilingual | v1.1.0 | ✅ Complete |
+
+---
+
+## Phase 8: F5-TTS & Chatterbox Multilingual
+
+**Priority**: 🔥 High
+**Effort**: Medium
+**Impact**: Production-grade voice cloning, global language support
+
+### Overview
+
+Phase 8 brings two major additions based on 2026 best practices research:
+- **F5-TTS**: Diffusion Transformer architecture with flow matching for high-quality zero-shot voice cloning
+- **Chatterbox Multilingual**: Expansion from English-only to 23 languages
+
+### Features Implemented
+
+#### 8.1 F5-TTS Engine
+```python
+from voice_soundboard.engines import F5TTSEngine
+
+engine = F5TTSEngine()
+
+# Clone voice with transcription (required for F5-TTS)
+engine.clone_voice("reference.wav", "my_voice", transcription="Hello world")
+
+# Generate with cloned voice
+result = engine.speak(
+    "New speech in the cloned voice",
+    voice="my_voice",
+    cfg_strength=2.0,  # Voice adherence
+    nfe_step=32,       # Quality steps
+    seed=42            # Reproducible
+)
+```
+
+**F5-TTS Capabilities**:
+| Feature | Value |
+|---------|-------|
+| Architecture | Diffusion Transformer (DiT) |
+| RTF | 0.15 (6x faster than real-time) |
+| Voice Cloning | Zero-shot from 3-10s audio |
+| Languages | English, Chinese |
+| Requirement | Reference transcription |
+
+#### 8.2 Chatterbox Multilingual (23 Languages)
+```python
+from voice_soundboard.engines import ChatterboxEngine
+
+engine = ChatterboxEngine()  # Default: multilingual
+
+# Speak in any of 23 languages
+result = engine.speak("Bonjour!", language="fr")
+result = engine.speak("Guten Tag!", language="de")
+result = engine.speak("Hola!", language="es")
+
+# Paralinguistic tags work in all languages
+result = engine.speak("Magnifique! [laugh]", language="fr")
+```
+
+**Supported Languages**:
+| Code | Language | Code | Language |
+|------|----------|------|----------|
+| ar | Arabic | ko | Korean |
+| da | Danish | ms | Malay |
+| de | German | nl | Dutch |
+| el | Greek | no | Norwegian |
+| en | English | pl | Polish |
+| es | Spanish | pt | Portuguese |
+| fi | Finnish | ru | Russian |
+| fr | French | sv | Swedish |
+| he | Hebrew | sw | Swahili |
+| hi | Hindi | tr | Turkish |
+| it | Italian | zh | Chinese |
+| ja | Japanese | | |
+
+### Implementation Tasks
+
+- [x] Create `F5TTSEngine` class implementing `TTSEngine` interface
+- [x] Add `clone_voice()` with transcription support
+- [x] Add `cfg_strength`, `nfe_step`, `seed` parameters
+- [x] Add `CHATTERBOX_LANGUAGES` constant (23 languages)
+- [x] Update `ChatterboxEngine` with `language` parameter
+- [x] Change default model to "multilingual"
+- [x] Add `list_languages()` and `list_all_languages()` methods
+- [x] Add MCP tools: `speak_f5tts`, `clone_voice_f5tts`, `list_chatterbox_languages`
+- [x] Expand `Language` enum with 7 new languages
+- [x] Add 15 new `LanguageConfig` entries (27 total)
+- [x] Write 190 tests for Phase 8 features
+
+### Requirements
+
+- **F5-TTS**: Python 3.10-3.11, CUDA recommended
+- **Chatterbox**: Python 3.11 only (not compatible with 3.12+)
 
 ---
 

@@ -150,6 +150,8 @@ class TestChatterboxSpeakMetadata:
         engine._cloned_voices = {}
         engine.default_exaggeration = 0.5
         engine.default_cfg_weight = 0.5
+        engine.default_language = "en"
+        engine._is_multilingual = False
         engine._model_loaded = True
         engine.model_variant = "turbo"
         return engine
@@ -191,6 +193,8 @@ class TestChatterboxEmotionExaggeration:
         engine._cloned_voices = {}
         engine.default_exaggeration = 0.5
         engine.default_cfg_weight = 0.5
+        engine.default_language = "en"
+        engine._is_multilingual = False
         engine._model_loaded = True
         engine.model_variant = "turbo"
         return engine
@@ -240,6 +244,8 @@ class TestChatterboxCfgWeight:
         engine._cloned_voices = {}
         engine.default_exaggeration = 0.5
         engine.default_cfg_weight = 0.5
+        engine.default_language = "en"
+        engine._is_multilingual = False
         engine._model_loaded = True
         engine.model_variant = "turbo"
         return engine

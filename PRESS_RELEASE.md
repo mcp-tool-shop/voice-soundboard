@@ -1,3 +1,174 @@
+# Voice Soundboard 1.1: F5-TTS Engine & 23-Language Multilingual Support
+
+**FOR IMMEDIATE RELEASE**
+
+*Superior voice cloning with Diffusion Transformers and global language coverage*
+
+---
+
+## Going Global with Superior Voice Cloning
+
+**January 23, 2026** - Today marks the release of **Voice Soundboard 1.1**, introducing the F5-TTS Diffusion Transformer engine for state-of-the-art voice cloning and expanding Chatterbox from English-only to 23 languages.
+
+```python
+# Clone any voice with F5-TTS
+engine.clone_voice("sample.wav", transcription="Hello, this is my voice.")
+engine.speak("Bonjour le monde!", language="fr")  # Speak in 23 languages
+```
+
+---
+
+## What's New in 1.1
+
+### F5-TTS: Next-Generation Voice Cloning
+
+The new F5-TTS engine uses Diffusion Transformer (DiT) architecture with flow matching:
+
+- **Zero-shot cloning** - Clone any voice from a short sample
+- **No duration model** - Simplified architecture, better results
+- **0.15 RTF** - Fast inference on GPU
+- **Transcription-guided** - Provide reference text for best quality
+
+```python
+from voice_soundboard.engines import F5TTSEngine
+
+engine = F5TTSEngine()
+engine.clone_voice(
+    "reference.wav",
+    voice_id="my_voice",
+    transcription="The quick brown fox jumps over the lazy dog."
+)
+result = engine.speak("Hello world!", voice="my_voice")
+```
+
+### Chatterbox Multilingual: 23 Languages
+
+Expanded from English-only to global coverage:
+
+| Region | Languages |
+|--------|-----------|
+| **Europe** | Danish, Dutch, Finnish, French, German, Greek, Italian, Norwegian, Polish, Portuguese, Russian, Spanish, Swedish, Turkish |
+| **Asia** | Arabic, Chinese, Hebrew, Hindi, Japanese, Korean, Malay |
+| **Africa** | Swahili |
+| **Default** | English |
+
+```python
+from voice_soundboard.engines import ChatterboxEngine
+
+engine = ChatterboxEngine()  # Multilingual by default
+
+# Speak in any language
+engine.speak("Guten Tag!", language="de")
+engine.speak("Bonjour!", language="fr")
+engine.speak("こんにちは！", language="ja")
+engine.speak("مرحبا!", language="ar")
+```
+
+---
+
+## By the Numbers
+
+| Metric | v1.0.0 | v1.1.0 |
+|--------|--------|--------|
+| TTS Engines | 2 | 3 (+F5-TTS) |
+| Languages | 4 | 23 (+19) |
+| Tests Defined | 686 | 876 (+190) |
+| MCP Tools | 40+ | 43+ (+3) |
+
+---
+
+## Backward Compatibility
+
+Users on older hardware or Python 3.12+ can continue using v1.0.0:
+
+```bash
+# Stay on v1.0.0 for maximum compatibility
+pip install voice-soundboard==1.0.0
+
+# Upgrade to v1.1.0 for new features
+pip install voice-soundboard[all]
+```
+
+### Requirements
+
+- **F5-TTS**: Python 3.10-3.11, CUDA recommended
+- **Chatterbox Multilingual**: Python 3.11 (not 3.12+)
+- **Kokoro (default)**: Python 3.10+, CPU or GPU
+
+---
+
+## Use Cases
+
+### Global Customer Service
+*"Bonjour! Comment puis-je vous aider?"*
+
+Support customers in their native language with natural, expressive voices.
+
+### International Audiobooks
+Generate audiobooks in 23 languages with the same cloned narrator voice.
+
+### Multilingual AI Assistants
+Build AI agents that speak naturally in Arabic, Japanese, German, and more.
+
+### Voice Cloning for Content Creators
+Clone your voice once, create content in any language with F5-TTS quality.
+
+---
+
+## Getting Started
+
+```bash
+# Install with all features
+pip install voice-soundboard[all]
+
+# Or specific features
+pip install voice-soundboard[f5tts]      # F5-TTS only
+pip install voice-soundboard[chatterbox] # Chatterbox multilingual
+```
+
+```python
+from voice_soundboard.engines import F5TTSEngine, ChatterboxEngine
+
+# F5-TTS for voice cloning
+f5 = F5TTSEngine()
+f5.clone_voice("sample.wav", transcription="Sample text")
+f5.speak("Cloned voice!", voice="cloned")
+
+# Chatterbox for multilingual
+cb = ChatterboxEngine()
+cb.speak("Hello world!", language="en")
+cb.speak("Hallo Welt!", language="de")
+```
+
+---
+
+## Quick Facts
+
+- **Release Date**: January 23, 2026
+- **Version**: 1.1.0 "Multilingual Voice Cloning"
+- **License**: MIT
+- **Language**: Python 3.10+ (3.11 for multilingual)
+- **Platforms**: Windows, Linux, macOS
+- **GPU**: Recommended for F5-TTS
+
+---
+
+<p align="center">
+  <strong>Voice Soundboard 1.1</strong><br>
+  <em>Now speaking your language.</em>
+</p>
+
+---
+
+## Links
+
+- **GitHub**: github.com/mikeyfrilot/voice-soundboard
+- **PyPI**: pypi.org/project/voice-soundboard
+- **Changelog**: CHANGELOG.md
+- **Roadmap**: ROADMAP.md
+
+---
+
 # Voice Soundboard 1.0: The Complete Voice Synthesis Platform for AI Agents
 
 **FOR IMMEDIATE RELEASE**

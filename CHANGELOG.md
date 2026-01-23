@@ -5,6 +5,74 @@ All notable changes to Voice Soundboard will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-01-23
+
+### The "Multilingual Voice Cloning" Release
+
+This release adds two major features: **F5-TTS** for high-quality Diffusion Transformer voice cloning, and **Chatterbox Multilingual** expanding from English-only to 23 languages. Users with older hardware can continue using v1.0.0.
+
+### Added
+
+#### F5-TTS Engine Integration
+- **F5TTSEngine** - New Diffusion Transformer backend for zero-shot voice cloning
+- **DiT Architecture** - Flow matching without duration models (0.15 RTF)
+- **cfg_strength** parameter - Control voice adherence (default: 2.0)
+- **nfe_step** parameter - Quality/speed tradeoff (default: 32)
+- **seed** parameter - Reproducible generation
+- **ref_text** requirement - Transcription of reference audio for best quality
+- New MCP tools: `speak_f5tts`, `clone_voice_f5tts`
+
+#### Chatterbox Multilingual (23 Languages)
+- Expanded from English-only to 23 languages
+- New languages: Arabic, Danish, German, Greek, Spanish, Finnish, French, Hebrew, Hindi, Italian, Japanese, Korean, Malay, Dutch, Norwegian, Polish, Portuguese, Russian, Swedish, Swahili, Turkish, Chinese
+- `language` parameter for `speak_chatterbox` tool
+- New MCP tool: `list_chatterbox_languages`
+- `CHATTERBOX_LANGUAGES` constant exported
+- `list_languages()` and `list_all_languages()` methods
+
+#### Cross-Language Voice Cloning Updates
+- 7 new languages in `Language` enum: Danish, Greek, Finnish, Hebrew, Malay, Norwegian, Swahili
+- 15 new `LanguageConfig` entries with phoneme mappings
+- Total of 27 language configurations
+
+#### Testing
+- 190 new tests for Phase 8 features
+- Total tests: 876 (up from 686)
+- New test files: `test_f5tts.py`, `test_phase8_crosslang.py`, `test_phase8_server_mcp.py`
+
+### Changed
+
+- Default Chatterbox model variant changed from "turbo" to "multilingual"
+- Chatterbox now imports from `chatterbox.mtl_tts` for multilingual support
+
+### Requirements
+
+- **F5-TTS**: Requires Python 3.10-3.11, CUDA recommended
+- **Chatterbox Multilingual**: Requires Python 3.11 (not compatible with 3.12+)
+- Both features are optional dependencies
+
+### Installation
+
+```bash
+# F5-TTS only
+pip install voice-soundboard[f5tts]
+
+# Chatterbox multilingual
+pip install voice-soundboard[chatterbox]
+
+# Both
+pip install voice-soundboard[all]
+```
+
+### Upgrade Notes
+
+Users on older hardware or Python 3.12+ can continue using v1.0.0:
+```bash
+pip install voice-soundboard==1.0.0
+```
+
+---
+
 ## [1.0.0] - 2026-01-22
 
 ### The "2027 Edition" - Feature Complete Release
@@ -174,6 +242,7 @@ This release represents the culmination of the full roadmap, transforming Voice 
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 1.1.0 | 2026-01-23 | F5-TTS engine, Chatterbox multilingual (23 languages) |
 | 1.0.0 | 2026-01-22 | Feature complete "2027 Edition" |
 | 0.7.0 | 2026-01-21 | Real-time voice conversion |
 | 0.6.0 | 2026-01-20 | Neural audio codecs (Mimi, DualCodec) |

@@ -4,7 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Security: Audited](https://img.shields.io/badge/security-audited-green.svg)](SECURITY_AUDIT.md)
-[![Tests: 495+](https://img.shields.io/badge/tests-495%2B%20passing-brightgreen.svg)](TEST_PLAN.md)
+[![Tests: 876](https://img.shields.io/badge/tests-876%20defined-brightgreen.svg)](TEST_PLAN.md)
 [![MCP Compatible](https://img.shields.io/badge/MCP-compatible-purple.svg)](https://modelcontextprotocol.io/)
 
 **AI-powered voice synthesis with natural language control.** Give AI agents expressive, human-like voices with 54+ voices, 19 emotions, real-time streaming, voice cloning, and multi-speaker dialogue.
@@ -25,6 +25,8 @@ engine.speak("Hello! How can I help you today?", style="warmly and cheerfully")
 | **Paralinguistic Tags** | `[laugh]`, `[sigh]`, `[gasp]` - natural non-speech sounds |
 | **Multi-Speaker Dialogue** | Generate podcasts, audiobooks, conversations |
 | **Voice Cloning** | Clone any voice from 3-10 seconds of audio |
+| **F5-TTS Engine** | DiT-based zero-shot cloning with flow matching |
+| **23 Languages** | Chatterbox multilingual: AR, DA, DE, EN, ES, FI, FR, and more |
 | **Real-time Streaming** | Sub-100ms latency for interactive applications |
 | **Mobile Web UI** | Access from phone/tablet via responsive web interface |
 | **MCP Integration** | 40+ tools for AI agent integration |
@@ -47,7 +49,8 @@ pip install -e .
 pip install voice-soundboard[websocket]   # WebSocket server
 pip install voice-soundboard[web]         # Mobile web UI
 pip install voice-soundboard[mcp]         # MCP server
-pip install voice-soundboard[chatterbox]  # Paralinguistic tags & voice cloning
+pip install voice-soundboard[chatterbox]  # Paralinguistic tags & 23 languages
+pip install voice-soundboard[f5tts]       # F5-TTS DiT voice cloning
 pip install voice-soundboard[all]         # Everything
 ```
 
@@ -102,6 +105,47 @@ result = engine.speak(
 ```
 
 Supported tags: `[laugh]`, `[chuckle]`, `[sigh]`, `[gasp]`, `[cough]`, `[groan]`, `[sniff]`, `[shush]`, `[clear throat]`
+
+### F5-TTS Voice Cloning (NEW in v1.1.0)
+
+```python
+from voice_soundboard.engines import F5TTSEngine
+
+engine = F5TTSEngine()
+
+# Clone voice with transcription (required for best quality)
+engine.clone_voice(
+    "reference.wav",
+    voice_id="my_voice",
+    transcription="The quick brown fox jumps over the lazy dog."
+)
+
+# Generate speech with cloned voice
+result = engine.speak(
+    "Hello, this is my cloned voice!",
+    voice="my_voice",
+    cfg_strength=2.0,  # Voice adherence
+    nfe_step=32        # Quality/speed tradeoff
+)
+```
+
+### Chatterbox Multilingual (NEW in v1.1.0)
+
+```python
+from voice_soundboard.engines import ChatterboxEngine
+
+engine = ChatterboxEngine()  # Multilingual by default
+
+# Speak in 23 different languages
+result = engine.speak("Bonjour le monde!", language="fr")  # French
+result = engine.speak("Hallo Welt!", language="de")        # German
+result = engine.speak("Hola mundo!", language="es")        # Spanish
+
+# List all supported languages
+print(engine.list_languages())
+# ['ar', 'da', 'de', 'el', 'en', 'es', 'fi', 'fr', 'he', 'hi', 'it',
+#  'ja', 'ko', 'ms', 'nl', 'no', 'pl', 'pt', 'ru', 'sv', 'sw', 'tr', 'zh']
+```
 
 ### Multi-Speaker Dialogue
 
@@ -240,7 +284,10 @@ Voice Soundboard exposes 40+ tools for AI agents via the Model Context Protocol.
 | `speak` | Generate speech with natural language control |
 | `speak_long` | Stream long text efficiently |
 | `speak_ssml` | Process SSML markup |
-| `speak_chatterbox` | Paralinguistic tags and emotion control |
+| `speak_chatterbox` | Paralinguistic tags, emotion, 23 languages |
+| `speak_f5tts` | F5-TTS DiT voice cloning |
+| `clone_voice_f5tts` | Register voice with transcription |
+| `list_chatterbox_languages` | List 23 supported languages |
 | `speak_dialogue` | Multi-speaker conversation synthesis |
 | `speak_realtime` | Ultra-low latency streaming |
 | `speak_with_context` | Context-aware emotion selection |
@@ -415,7 +462,7 @@ pytest tests/ -v
 pytest tests/ --cov=voice_soundboard
 ```
 
-**Test Results**: 495+ tests, 98.4% pass rate. See [TEST_PLAN.md](TEST_PLAN.md).
+**Test Results**: 876 tests defined (Phase 8 adds 190). See [TEST_PLAN.md](TEST_PLAN.md).
 
 ---
 
@@ -461,7 +508,8 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## Acknowledgments
 
 - [Kokoro ONNX](https://github.com/thewh1teagle/kokoro-onnx) - High-quality TTS engine
-- [Chatterbox](https://github.com/resemble-ai/chatterbox) - Paralinguistic tags
+- [Chatterbox](https://github.com/resemble-ai/chatterbox) - Paralinguistic tags & multilingual
+- [F5-TTS](https://github.com/SWivid/F5-TTS) - Diffusion Transformer voice cloning
 - [defusedxml](https://github.com/tiran/defusedxml) - Secure XML parsing
 
 ---

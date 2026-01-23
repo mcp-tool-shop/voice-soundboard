@@ -1,8 +1,144 @@
-# Social Media Templates for Voice Soundboard 1.0
+# Social Media Templates for Voice Soundboard
 
 Ready-to-use posts for announcing Voice Soundboard across different platforms.
 
 ---
+
+## v1.1.0 - Multilingual Voice Cloning Release
+
+### Twitter/X - Launch (280 chars)
+```
+🌍 Voice Soundboard 1.1 is here!
+
+NEW:
+✅ F5-TTS DiT engine for voice cloning
+✅ 23 languages (was English only!)
+✅ Clone your voice, speak any language
+
+engine.speak("Bonjour!", language="fr")
+
+🔗 github.com/mikeyfrilot/voice-soundboard
+```
+
+### Twitter/X - Thread Starter
+```
+🌍 Announcing Voice Soundboard 1.1 - Now with F5-TTS voice cloning and 23 languages!
+
+Clone any voice. Speak any language.
+
+A thread on what's new 🧵👇
+```
+
+### Twitter/X - Thread Post 1 (F5-TTS)
+```
+1/ F5-TTS: Next-gen voice cloning with Diffusion Transformers
+
+Clone any voice from a short sample, then speak in that voice:
+
+engine.clone_voice("sample.wav", transcription="Hello world")
+engine.speak("Bonjour!", voice="cloned")
+
+0.15 RTF - fast inference on GPU
+```
+
+### Twitter/X - Thread Post 2 (Multilingual)
+```
+2/ Chatterbox now speaks 23 languages!
+
+🇬🇧 English  🇫🇷 French  🇩🇪 German
+🇯🇵 Japanese  🇨🇳 Chinese  🇸🇦 Arabic
+🇰🇷 Korean  🇪🇸 Spanish  🇮🇹 Italian
+...and 14 more!
+
+All with paralinguistic tags [laugh] [sigh]
+```
+
+### Twitter/X - Thread Post 3 (Backward Compat)
+```
+3/ Older hardware? Python 3.12+?
+
+Stay on v1.0.0:
+pip install voice-soundboard==1.0.0
+
+New features need:
+• F5-TTS: Python 3.10-3.11, CUDA
+• Multilingual: Python 3.11 only
+
+Choose what works for you!
+```
+
+### LinkedIn - Professional
+```
+🌍 Announcing Voice Soundboard 1.1 - Global Voice Synthesis for AI Agents
+
+Major update bringing:
+
+🔹 F5-TTS Engine - Diffusion Transformer voice cloning with flow matching. Clone any voice from seconds of audio.
+
+🔹 23 Languages - Chatterbox expanded from English-only to Arabic, Chinese, French, German, Japanese, Korean, Spanish, and 16 more.
+
+Use cases:
+• Global customer service bots
+• International audiobook production
+• Multilingual AI assistants
+• Cross-language content creation
+
+Backward compatible: Users on older hardware can stay on v1.0.0.
+
+pip install voice-soundboard[all]
+
+GitHub: github.com/mikeyfrilot/voice-soundboard
+
+#AI #TTS #VoiceSynthesis #Multilingual #OpenSource #F5TTS
+```
+
+### Reddit - r/Python
+```
+Title: Voice Soundboard 1.1 - F5-TTS voice cloning + 23 languages (was English only)
+
+Hey r/Python!
+
+Just released v1.1 of Voice Soundboard with two major features:
+
+**F5-TTS Engine** - Diffusion Transformer for voice cloning:
+```python
+engine.clone_voice("sample.wav", transcription="Hello")
+engine.speak("Cloned voice!", voice="cloned")
+```
+
+**23 Languages** - Chatterbox multilingual:
+```python
+engine.speak("Bonjour!", language="fr")
+engine.speak("Guten Tag!", language="de")
+```
+
+Note: F5-TTS needs Python 3.10-3.11, Chatterbox needs 3.11.
+Users on 3.12+ can stick with v1.0.0.
+
+GitHub: github.com/mikeyfrilot/voice-soundboard
+```
+
+### Hacker News - Show HN
+```
+Title: Show HN: Voice Soundboard 1.1 - F5-TTS voice cloning and 23 languages
+
+Hi HN,
+
+Released v1.1 of my open-source voice synthesis library with two major additions:
+
+1. F5-TTS engine - Diffusion Transformer architecture for zero-shot voice cloning. Provide a short audio sample + transcription, and you can speak in that voice.
+
+2. Chatterbox multilingual - Went from English-only to 23 languages (Arabic, Chinese, French, German, Japanese, etc.)
+
+Backward compatible - v1.0.0 still available for older hardware or Python 3.12+ users.
+
+pip install voice-soundboard[all]
+https://github.com/mikeyfrilot/voice-soundboard
+```
+
+---
+
+## v1.0.0 - Original Release Posts
 
 ## Twitter/X
 

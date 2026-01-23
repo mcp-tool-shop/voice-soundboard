@@ -1770,3 +1770,394 @@ HTTP web server for mobile/tablet access to Voice Soundboard.
 | Normalizer (v1.0.1) | 101 |
 | Web Server (v1.0.1) | 70 |
 | **TOTAL TESTS DEFINED** | **686** |
+
+---
+
+## PHASE 8: F5-TTS ENGINE & CHATTERBOX MULTILINGUAL (v0.3.0)
+
+**Date Added: 2026-01-23**
+
+These tests cover the new F5-TTS Diffusion Transformer engine integration and the Chatterbox multilingual upgrade from English-only to 23 languages.
+
+### Module: engines/f5tts.py (NEW)
+
+#### F5TTSEngine Initialization
+- [ ] TEST-F5-01: `F5TTSEngine.__init__()` with default parameters
+- [ ] TEST-F5-02: `F5TTSEngine.__init__(model_variant="E2TTS_Base")` sets variant
+- [ ] TEST-F5-03: `F5TTSEngine.__init__(device="cpu")` sets device
+- [ ] TEST-F5-04: `F5TTSEngine._model` is None initially
+- [ ] TEST-F5-05: `F5TTSEngine._model_loaded` is False initially
+- [ ] TEST-F5-06: `F5TTSEngine.default_cfg_strength` is 2.0
+- [ ] TEST-F5-07: `F5TTSEngine.default_nfe_step` is 32
+- [ ] TEST-F5-08: `F5TTSEngine.default_sway_coef` is -1.0
+- [ ] TEST-F5-09: `F5TTSEngine._cloned_voices` is empty dict initially
+
+#### F5TTSEngine Properties
+- [ ] TEST-F5-10: `F5TTSEngine.name` returns "f5-tts-f5tts_v1_base" (lowercase variant)
+- [ ] TEST-F5-11: `F5TTSEngine.capabilities.supports_streaming` is False
+- [ ] TEST-F5-12: `F5TTSEngine.capabilities.supports_ssml` is False
+- [ ] TEST-F5-13: `F5TTSEngine.capabilities.supports_voice_cloning` is True
+- [ ] TEST-F5-14: `F5TTSEngine.capabilities.supports_emotion_control` is False
+- [ ] TEST-F5-15: `F5TTSEngine.capabilities.supports_paralinguistic_tags` is False
+- [ ] TEST-F5-16: `F5TTSEngine.capabilities.languages` includes "en" and "zh"
+- [ ] TEST-F5-17: `F5TTSEngine.capabilities.typical_rtf` is 6.0
+- [ ] TEST-F5-18: `F5TTSEngine.capabilities.min_latency_ms` is 500.0
+
+#### F5TTSEngine Voice Cloning
+- [ ] TEST-F5-19: `clone_voice()` registers voice with audio_path and transcription
+- [ ] TEST-F5-20: `clone_voice()` raises FileNotFoundError for missing file
+- [ ] TEST-F5-21: `clone_voice()` without transcription prints warning
+- [ ] TEST-F5-22: `clone_voice()` with short audio (<3s) prints warning
+- [ ] TEST-F5-23: `clone_voice()` with long audio (>15s) prints warning
+- [ ] TEST-F5-24: `list_voices()` returns registered voice IDs
+- [ ] TEST-F5-25: `list_cloned_voices()` returns dict with audio_path and transcription
+- [ ] TEST-F5-26: `get_voice_info()` returns metadata dict for registered voice
+- [ ] TEST-F5-27: `get_voice_info()` returns {"type": "unknown"} for unregistered voice
+- [ ] TEST-F5-28: `remove_cloned_voice()` removes voice and returns True
+- [ ] TEST-F5-29: `remove_cloned_voice()` returns False for nonexistent voice
+
+#### F5TTSEngine Speech Generation (Mocked)
+- [ ] TEST-F5-30: `speak()` raises ValueError when ref_text is None for new voice
+- [ ] TEST-F5-31: `speak()` with registered voice uses stored transcription
+- [ ] TEST-F5-32: `speak()` returns EngineResult with correct audio_path
+- [ ] TEST-F5-33: `speak()` returns EngineResult with correct sample_rate
+- [ ] TEST-F5-34: `speak()` metadata includes cfg_strength
+- [ ] TEST-F5-35: `speak()` metadata includes nfe_step
+- [ ] TEST-F5-36: `speak()` metadata includes seed
+- [ ] TEST-F5-37: `speak()` metadata includes speed
+- [ ] TEST-F5-38: `speak()` metadata includes has_reference
+- [ ] TEST-F5-39: `speak()` with custom cfg_strength passes value to model
+- [ ] TEST-F5-40: `speak()` with custom nfe_step passes value to model
+- [ ] TEST-F5-41: `speak()` with custom seed passes value to model
+- [ ] TEST-F5-42: `speak()` with save_path uses specified path
+- [ ] TEST-F5-43: `speak()` without save_path generates path from config.output_dir
+
+#### F5TTSEngine speak_raw (Mocked)
+- [ ] TEST-F5-44: `speak_raw()` returns (samples, sample_rate) tuple
+- [ ] TEST-F5-45: `speak_raw()` with registered voice uses stored profile
+- [ ] TEST-F5-46: `speak_raw()` samples are float32 dtype
+- [ ] TEST-F5-47: `speak_raw()` with custom parameters passes them to model
+
+#### F5TTSEngine Model Loading (Mocked)
+- [ ] TEST-F5-48: `_ensure_model_loaded()` imports f5_tts.api.F5TTS
+- [ ] TEST-F5-49: `_ensure_model_loaded()` raises ImportError when f5-tts not installed
+- [ ] TEST-F5-50: `_ensure_model_loaded()` sets _model_loaded to True
+- [ ] TEST-F5-51: `_ensure_model_loaded()` is idempotent (called twice, loads once)
+- [ ] TEST-F5-52: `is_loaded()` returns True after model loaded
+- [ ] TEST-F5-53: `unload()` sets _model to None
+- [ ] TEST-F5-54: `unload()` sets _model_loaded to False
+- [ ] TEST-F5-55: `unload()` clears CUDA cache when torch available
+
+#### F5TTSEngine Convenience Function
+- [ ] TEST-F5-56: `speak_f5tts()` function exists and returns Path
+- [ ] TEST-F5-57: `speak_f5tts()` creates F5TTSEngine internally
+- [ ] TEST-F5-58: `speak_f5tts()` passes all parameters to engine.speak()
+
+---
+
+### Module: engines/chatterbox.py (Multilingual Updates)
+
+#### Chatterbox Languages Constant
+- [ ] TEST-CBM-01: `CHATTERBOX_LANGUAGES` is a list with 23 languages
+- [ ] TEST-CBM-02: `CHATTERBOX_LANGUAGES` includes "ar" (Arabic)
+- [ ] TEST-CBM-03: `CHATTERBOX_LANGUAGES` includes "da" (Danish)
+- [ ] TEST-CBM-04: `CHATTERBOX_LANGUAGES` includes "de" (German)
+- [ ] TEST-CBM-05: `CHATTERBOX_LANGUAGES` includes "el" (Greek)
+- [ ] TEST-CBM-06: `CHATTERBOX_LANGUAGES` includes "en" (English)
+- [ ] TEST-CBM-07: `CHATTERBOX_LANGUAGES` includes "es" (Spanish)
+- [ ] TEST-CBM-08: `CHATTERBOX_LANGUAGES` includes "fi" (Finnish)
+- [ ] TEST-CBM-09: `CHATTERBOX_LANGUAGES` includes "fr" (French)
+- [ ] TEST-CBM-10: `CHATTERBOX_LANGUAGES` includes "he" (Hebrew)
+- [ ] TEST-CBM-11: `CHATTERBOX_LANGUAGES` includes "hi" (Hindi)
+- [ ] TEST-CBM-12: `CHATTERBOX_LANGUAGES` includes "it" (Italian)
+- [ ] TEST-CBM-13: `CHATTERBOX_LANGUAGES` includes "ja" (Japanese)
+- [ ] TEST-CBM-14: `CHATTERBOX_LANGUAGES` includes "ko" (Korean)
+- [ ] TEST-CBM-15: `CHATTERBOX_LANGUAGES` includes "ms" (Malay)
+- [ ] TEST-CBM-16: `CHATTERBOX_LANGUAGES` includes "nl" (Dutch)
+- [ ] TEST-CBM-17: `CHATTERBOX_LANGUAGES` includes "no" (Norwegian)
+- [ ] TEST-CBM-18: `CHATTERBOX_LANGUAGES` includes "pl" (Polish)
+- [ ] TEST-CBM-19: `CHATTERBOX_LANGUAGES` includes "pt" (Portuguese)
+- [ ] TEST-CBM-20: `CHATTERBOX_LANGUAGES` includes "ru" (Russian)
+- [ ] TEST-CBM-21: `CHATTERBOX_LANGUAGES` includes "sv" (Swedish)
+- [ ] TEST-CBM-22: `CHATTERBOX_LANGUAGES` includes "sw" (Swahili)
+- [ ] TEST-CBM-23: `CHATTERBOX_LANGUAGES` includes "tr" (Turkish)
+- [ ] TEST-CBM-24: `CHATTERBOX_LANGUAGES` includes "zh" (Chinese)
+
+#### Chatterbox Multilingual Initialization
+- [ ] TEST-CBM-25: Default `model_variant` is "multilingual" (not "turbo")
+- [ ] TEST-CBM-26: `_is_multilingual` is True when variant is "multilingual"
+- [ ] TEST-CBM-27: `_is_multilingual` is False when variant is "turbo"
+- [ ] TEST-CBM-28: `default_language` is "en"
+
+#### Chatterbox Multilingual Capabilities
+- [ ] TEST-CBM-29: Multilingual model reports 23 languages in capabilities
+- [ ] TEST-CBM-30: Turbo model reports only ["en"] in capabilities
+- [ ] TEST-CBM-31: `capabilities.languages` is a copy (modifying doesn't affect original)
+
+#### Chatterbox list_languages Methods
+- [ ] TEST-CBM-32: `list_languages()` returns 23 languages for multilingual
+- [ ] TEST-CBM-33: `list_languages()` returns ["en"] for turbo
+- [ ] TEST-CBM-34: `list_languages()` returns a copy (not original list)
+- [ ] TEST-CBM-35: `list_all_languages()` static method returns 23 languages
+- [ ] TEST-CBM-36: `list_all_languages()` returns a copy
+
+#### Chatterbox speak() with Language Parameter
+- [ ] TEST-CBM-37: `speak(language="en")` passes language_id to multilingual model
+- [ ] TEST-CBM-38: `speak(language="fr")` generates French audio
+- [ ] TEST-CBM-39: `speak(language="ja")` generates Japanese audio
+- [ ] TEST-CBM-40: `speak(language="zh")` generates Chinese audio
+- [ ] TEST-CBM-41: `speak(language="de")` generates German audio
+- [ ] TEST-CBM-42: `speak()` without language parameter defaults to "en"
+- [ ] TEST-CBM-43: `speak(language="invalid")` falls back to "en" with warning
+- [ ] TEST-CBM-44: `speak()` metadata includes `language` field
+- [ ] TEST-CBM-45: Turbo model ignores language parameter (English only)
+
+#### Chatterbox speak_raw() with Language Parameter
+- [ ] TEST-CBM-46: `speak_raw(language="fr")` passes language_id to model
+- [ ] TEST-CBM-47: `speak_raw()` without language uses default_language
+
+#### Chatterbox Model Loading (Multilingual)
+- [ ] TEST-CBM-48: Multilingual model imports from `chatterbox.mtl_tts`
+- [ ] TEST-CBM-49: Turbo model imports from `chatterbox.tts_turbo`
+- [ ] TEST-CBM-50: Standard model imports from `chatterbox.tts`
+
+#### Chatterbox speak_chatterbox Convenience Function
+- [ ] TEST-CBM-51: `speak_chatterbox()` accepts language parameter
+- [ ] TEST-CBM-52: `speak_chatterbox()` creates multilingual engine by default
+- [ ] TEST-CBM-53: `speak_chatterbox(language="fr")` generates French audio
+
+---
+
+### Module: engines/__init__.py (F5-TTS Export)
+
+#### F5TTSEngine Import
+- [ ] TEST-EI-F5-01: `F5TTS_AVAILABLE` is exported
+- [ ] TEST-EI-F5-02: `F5TTSEngine` is exported when f5-tts is installed
+- [ ] TEST-EI-F5-03: `F5TTSEngine` is None when f5-tts is not installed
+- [ ] TEST-EI-F5-04: `F5TTS_AVAILABLE` is True when f5-tts is installed
+- [ ] TEST-EI-F5-05: `F5TTS_AVAILABLE` is False when f5-tts is not installed
+- [ ] TEST-EI-F5-06: `__all__` includes "F5TTSEngine"
+- [ ] TEST-EI-F5-07: `__all__` includes "F5TTS_AVAILABLE"
+
+---
+
+### Module: cloning/crosslang.py (New Languages)
+
+#### Language Enum Additions
+- [ ] TEST-CL-01: `Language.DANISH` ("da") exists in enum
+- [ ] TEST-CL-02: `Language.GREEK` ("el") exists in enum
+- [ ] TEST-CL-03: `Language.FINNISH` ("fi") exists in enum
+- [ ] TEST-CL-04: `Language.HEBREW` ("he") exists in enum
+- [ ] TEST-CL-05: `Language.MALAY` ("ms") exists in enum
+- [ ] TEST-CL-06: `Language.NORWEGIAN` ("no") exists in enum
+- [ ] TEST-CL-07: `Language.SWAHILI` ("sw") exists in enum
+- [ ] TEST-CL-08: Language enum has 27 total members
+
+#### LanguageConfig Additions (15 New Configs)
+- [ ] TEST-CL-09: `LANGUAGE_CONFIGS` has entry for "cs" (Czech)
+- [ ] TEST-CL-10: `LANGUAGE_CONFIGS` has entry for "da" (Danish)
+- [ ] TEST-CL-11: `LANGUAGE_CONFIGS` has entry for "nl" (Dutch)
+- [ ] TEST-CL-12: `LANGUAGE_CONFIGS` has entry for "el" (Greek)
+- [ ] TEST-CL-13: `LANGUAGE_CONFIGS` has entry for "fi" (Finnish)
+- [ ] TEST-CL-14: `LANGUAGE_CONFIGS` has entry for "he" (Hebrew)
+- [ ] TEST-CL-15: `LANGUAGE_CONFIGS` has entry for "id" (Indonesian)
+- [ ] TEST-CL-16: `LANGUAGE_CONFIGS` has entry for "ms" (Malay)
+- [ ] TEST-CL-17: `LANGUAGE_CONFIGS` has entry for "no" (Norwegian)
+- [ ] TEST-CL-18: `LANGUAGE_CONFIGS` has entry for "pl" (Polish)
+- [ ] TEST-CL-19: `LANGUAGE_CONFIGS` has entry for "sv" (Swedish)
+- [ ] TEST-CL-20: `LANGUAGE_CONFIGS` has entry for "sw" (Swahili)
+- [ ] TEST-CL-21: `LANGUAGE_CONFIGS` has entry for "th" (Thai)
+- [ ] TEST-CL-22: `LANGUAGE_CONFIGS` has entry for "tr" (Turkish)
+- [ ] TEST-CL-23: `LANGUAGE_CONFIGS` has entry for "vi" (Vietnamese)
+- [ ] TEST-CL-24: `LANGUAGE_CONFIGS` has 27 total entries
+
+#### LanguageConfig Structure Validation
+- [ ] TEST-CL-25: All new configs have `name` field
+- [ ] TEST-CL-26: All new configs have `espeak_code` field
+- [ ] TEST-CL-27: All new configs have `romanizer` field (or None)
+- [ ] TEST-CL-28: All new configs have `phoneme_set` field
+- [ ] TEST-CL-29: All new configs have `sample_rate` field (24000 or 22050)
+- [ ] TEST-CL-30: All new configs have `word_boundaries` field
+- [ ] TEST-CL-31: All `espeak_code` values are valid for espeak-ng
+
+---
+
+### Module: server.py (F5-TTS & Multilingual MCP Tools)
+
+#### F5-TTS MCP Tools - speak_f5tts
+- [ ] TEST-SV-F5-01: `speak_f5tts` tool is listed in tools
+- [ ] TEST-SV-F5-02: Tool accepts `text` parameter (required)
+- [ ] TEST-SV-F5-03: Tool accepts `voice` parameter (path or ID)
+- [ ] TEST-SV-F5-04: Tool accepts `ref_text` parameter
+- [ ] TEST-SV-F5-05: Tool accepts `speed` parameter (0.5-2.0)
+- [ ] TEST-SV-F5-06: Tool accepts `cfg_strength` parameter
+- [ ] TEST-SV-F5-07: Tool accepts `nfe_step` parameter
+- [ ] TEST-SV-F5-08: Tool accepts `seed` parameter
+- [ ] TEST-SV-F5-09: Tool accepts `play` parameter
+- [ ] TEST-SV-F5-10: Tool returns audio_path in response
+- [ ] TEST-SV-F5-11: Tool returns duration_seconds in response
+- [ ] TEST-SV-F5-12: Tool returns realtime_factor in response
+- [ ] TEST-SV-F5-13: Tool handles missing F5-TTS gracefully (ImportError message)
+- [ ] TEST-SV-F5-14: Tool with `play=true` plays audio via sounddevice
+- [ ] TEST-SV-F5-15: Tool without ref_text and new voice returns error
+
+#### F5-TTS MCP Tools - clone_voice_f5tts
+- [ ] TEST-SV-F5-16: `clone_voice_f5tts` tool is listed
+- [ ] TEST-SV-F5-17: Tool accepts `audio_path` parameter (required)
+- [ ] TEST-SV-F5-18: Tool accepts `voice_id` parameter (optional)
+- [ ] TEST-SV-F5-19: Tool accepts `transcription` parameter (optional)
+- [ ] TEST-SV-F5-20: Tool returns registered voice_id
+- [ ] TEST-SV-F5-21: Tool handles missing file gracefully
+- [ ] TEST-SV-F5-22: Tool handles missing F5-TTS gracefully
+
+#### Chatterbox Multilingual MCP Tools
+- [ ] TEST-SV-CBM-01: `speak_chatterbox` tool accepts `language` parameter
+- [ ] TEST-SV-CBM-02: `list_chatterbox_languages` tool is listed
+- [ ] TEST-SV-CBM-03: `list_chatterbox_languages` returns 23 languages
+- [ ] TEST-SV-CBM-04: Each language entry has code and name
+- [ ] TEST-SV-CBM-05: `speak_chatterbox(language="fr")` passes language to engine
+- [ ] TEST-SV-CBM-06: `speak_chatterbox(language="ja")` passes language to engine
+
+#### F5-TTS Engine Singleton
+- [ ] TEST-SV-F5-23: `get_f5tts_engine()` returns singleton
+- [ ] TEST-SV-F5-24: `get_f5tts_engine()` raises ImportError when unavailable
+- [ ] TEST-SV-F5-25: Multiple calls return same engine instance
+- [ ] TEST-SV-F5-26: `_f5tts_engine` global is None initially
+
+---
+
+### Integration Tests: F5-TTS
+
+#### F5-TTS End-to-End (Requires f5-tts installed)
+- [ ] TEST-F5-INT-01: Clone voice from reference audio with transcription
+- [ ] TEST-F5-INT-02: Generate speech using cloned voice
+- [ ] TEST-F5-INT-03: Voice cloning preserves speaker characteristics
+- [ ] TEST-F5-INT-04: Different seeds produce different audio
+- [ ] TEST-F5-INT-05: Speed parameter affects audio duration
+- [ ] TEST-F5-INT-06: cfg_strength affects voice adherence
+- [ ] TEST-F5-INT-07: nfe_step affects quality/speed tradeoff
+
+### Integration Tests: Chatterbox Multilingual
+
+#### Chatterbox Multilingual End-to-End (Requires chatterbox-tts installed)
+- [ ] TEST-CBM-INT-01: Generate French speech with correct pronunciation
+- [ ] TEST-CBM-INT-02: Generate Japanese speech with correct characters
+- [ ] TEST-CBM-INT-03: Generate German speech with umlauts
+- [ ] TEST-CBM-INT-04: Generate Chinese speech with tones
+- [ ] TEST-CBM-INT-05: Generate Arabic speech with RTL text
+- [ ] TEST-CBM-INT-06: Paralinguistic tags work in non-English languages
+- [ ] TEST-CBM-INT-07: Voice cloning works across languages
+- [ ] TEST-CBM-INT-08: Emotion exaggeration works in all languages
+
+---
+
+## F5-TTS & CHATTERBOX MULTILINGUAL TEST SUMMARY
+
+| Module | Total Tests | Priority |
+|--------|-------------|----------|
+| engines/f5tts.py | 58 | CRITICAL |
+| engines/chatterbox.py (multilingual) | 53 | CRITICAL |
+| engines/__init__.py (F5-TTS export) | 7 | HIGH |
+| cloning/crosslang.py (new languages) | 31 | HIGH |
+| server.py (F5-TTS + multilingual tools) | 26 | HIGH |
+| Integration (F5-TTS) | 7 | MEDIUM |
+| Integration (Chatterbox Multilingual) | 8 | MEDIUM |
+| **PHASE 8 TOTAL** | **190** | - |
+
+---
+
+## UPDATED COMBINED TEST COUNTS (v0.3.0)
+
+| Category | Tests |
+|----------|-------|
+| Original Test Plan (v0.1.0) | 254 |
+| Additional Tests (Audit) | 89 |
+| Phase 1: Chatterbox (v0.2.0) | 115 |
+| Phases 2-7 (Future) | 57 |
+| Normalizer (v1.0.1) | 101 |
+| Web Server (v1.0.1) | 70 |
+| **Phase 8: F5-TTS & Multilingual (v0.3.0)** | **190** |
+| **TOTAL TESTS DEFINED** | **876** |
+
+---
+
+## TEST EXECUTION PRIORITY FOR PHASE 8
+
+### Session 13 (Critical - Unit Tests)
+**Target: 40 tests**
+
+Execute first (no dependencies):
+1. TEST-F5-01 to TEST-F5-18 (F5TTSEngine init & properties)
+2. TEST-F5-19 to TEST-F5-29 (F5TTSEngine voice cloning)
+3. TEST-CBM-01 to TEST-CBM-24 (CHATTERBOX_LANGUAGES constant)
+
+### Session 14 (High Priority - Mocked Tests)
+**Target: 40 tests**
+
+Execute with mocks:
+1. TEST-F5-30 to TEST-F5-55 (F5TTSEngine speak/speak_raw mocked)
+2. TEST-CBM-25 to TEST-CBM-50 (Chatterbox multilingual init/speak)
+
+### Session 15 (High Priority - Exports & Configs)
+**Target: 40 tests**
+
+Execute:
+1. TEST-EI-F5-01 to TEST-EI-F5-07 (engines/__init__.py exports)
+2. TEST-CL-01 to TEST-CL-31 (crosslang.py new languages)
+
+### Session 16 (MCP Tools)
+**Target: 26 tests**
+
+Execute:
+1. TEST-SV-F5-01 to TEST-SV-F5-26 (server.py F5-TTS tools)
+2. TEST-SV-CBM-01 to TEST-SV-CBM-06 (server.py Chatterbox tools)
+
+### Session 17 (Integration - Optional)
+**Target: 15 tests**
+
+Execute if engines installed:
+1. TEST-F5-INT-01 to TEST-F5-INT-07 (F5-TTS integration)
+2. TEST-CBM-INT-01 to TEST-CBM-INT-08 (Chatterbox multilingual integration)
+
+---
+
+## NOTES FOR IMPLEMENTING CLAUDE
+
+### Test File Locations
+- F5-TTS tests: `tests/test_f5tts.py` (CREATE NEW)
+- Chatterbox multilingual tests: `tests/test_chatterbox.py` (EXTEND EXISTING)
+- CrossLang tests: `tests/test_crosslang.py` (CREATE NEW or EXTEND)
+- Server MCP tests: `tests/test_server.py` (EXTEND EXISTING)
+
+### Mocking Strategy
+For F5-TTS and Chatterbox tests without the actual models:
+```python
+from unittest.mock import Mock, patch, MagicMock
+import numpy as np
+
+# Mock the model loading
+@patch('voice_soundboard.engines.f5tts.F5TTSEngine._ensure_model_loaded')
+def test_speak_raw_returns_tuple(mock_load):
+    engine = F5TTSEngine.__new__(F5TTSEngine)
+    engine._model = Mock()
+    engine._model.infer = Mock(return_value=(np.zeros(24000), 24000, None))
+    # ... test implementation
+```
+
+### Key Assertions
+- Engine capabilities must match documented features
+- Voice cloning must persist across speak() calls
+- Language parameter must be passed to multilingual model
+- MCP tool responses must include all documented fields
+- Error handling must be graceful (no crashes, clear messages)
+
+### Python 3.11 Requirement
+**IMPORTANT**: Chatterbox requires Python 3.11. Tests should skip gracefully on other versions:
+```python
+import sys
+import pytest
+
+@pytest.mark.skipif(sys.version_info >= (3, 12), reason="Chatterbox requires Python 3.11")
+def test_chatterbox_integration():
+    ...
+```

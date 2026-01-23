@@ -6,6 +6,11 @@ Integrates Resemble AI's Chatterbox model with:
 - Emotion exaggeration control (0.0 monotone → 1.0 dramatic)
 - Zero-shot voice cloning from 3-10 second samples
 - Sub-200ms inference latency
+- Multilingual support (23 languages)
+
+Model variants:
+- "turbo": English-only, fastest (350M params)
+- "multilingual": 23 languages support
 
 Reference: https://github.com/resemble-ai/chatterbox
 """
@@ -49,6 +54,33 @@ TAG_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# 23 languages supported by Chatterbox Multilingual
+CHATTERBOX_LANGUAGES = [
+    "ar",  # Arabic
+    "da",  # Danish
+    "de",  # German
+    "el",  # Greek
+    "en",  # English
+    "es",  # Spanish
+    "fi",  # Finnish
+    "fr",  # French
+    "he",  # Hebrew
+    "hi",  # Hindi
+    "it",  # Italian
+    "ja",  # Japanese
+    "ko",  # Korean
+    "ms",  # Malay
+    "nl",  # Dutch
+    "no",  # Norwegian
+    "pl",  # Polish
+    "pt",  # Portuguese
+    "ru",  # Russian
+    "sv",  # Swedish
+    "sw",  # Swahili
+    "tr",  # Turkish
+    "zh",  # Chinese
+]
+
 
 def validate_paralinguistic_tags(text: str) -> List[str]:
     """
@@ -78,14 +110,21 @@ class ChatterboxEngine(TTSEngine):
     - Emotion exaggeration slider (0.0 = monotone, 1.0 = dramatic)
     - Zero-shot voice cloning from short audio samples
     - Sub-200ms latency for real-time applications
+    - Multilingual support (23 languages with "multilingual" variant)
 
     Example:
+        # English with paralinguistic tags
         engine = ChatterboxEngine()
-
-        # Basic usage with tags
         result = engine.speak(
             "That's hilarious! [laugh] Oh man, [sigh] I needed that.",
             emotion_exaggeration=0.7
+        )
+
+        # Multilingual (French)
+        engine = ChatterboxEngine(model_variant="multilingual")
+        result = engine.speak(
+            "Bonjour! Comment allez-vous?",
+            language="fr"
         )
 
         # Voice cloning
@@ -98,7 +137,7 @@ class ChatterboxEngine(TTSEngine):
     def __init__(
         self,
         config: Optional[Config] = None,
-        model_variant: str = "turbo",
+        model_variant: str = "multilingual",
         device: str = "cuda",
     ):
         """
@@ -106,7 +145,10 @@ class ChatterboxEngine(TTSEngine):
 
         Args:
             config: Voice soundboard config
-            model_variant: "turbo" (fast, 350M) or "standard" (quality, 500M)
+            model_variant: Model variant to use:
+                - "turbo": English-only, fastest (350M params)
+                - "multilingual": 23 languages support (default)
+                - "standard": Legacy quality mode (500M)
             device: "cuda" or "cpu"
         """
         self.config = config or Config()
@@ -115,10 +157,12 @@ class ChatterboxEngine(TTSEngine):
 
         self._model = None
         self._model_loaded = False
+        self._is_multilingual = model_variant == "multilingual"
 
         # Default parameters
         self.default_exaggeration = 0.5
         self.default_cfg_weight = 0.5
+        self.default_language = "en"
 
         # Voice library for cloned voices
         self._cloned_voices: Dict[str, Path] = {}
@@ -129,6 +173,12 @@ class ChatterboxEngine(TTSEngine):
 
     @property
     def capabilities(self) -> EngineCapabilities:
+        # Languages depend on model variant
+        if self._is_multilingual:
+            languages = CHATTERBOX_LANGUAGES.copy()
+        else:
+            languages = ["en"]
+
         return EngineCapabilities(
             supports_streaming=True,
             supports_ssml=False,  # Uses paralinguistic tags instead
@@ -137,7 +187,7 @@ class ChatterboxEngine(TTSEngine):
             supports_paralinguistic_tags=True,
             supports_emotion_exaggeration=True,
             paralinguistic_tags=PARALINGUISTIC_TAGS.copy(),
-            languages=["en"],  # Turbo is English-only; multilingual variant supports 23+
+            languages=languages,
             typical_rtf=6.0,
             min_latency_ms=180.0,
         )
@@ -151,7 +201,12 @@ class ChatterboxEngine(TTSEngine):
         start = time.time()
 
         try:
-            if self.model_variant == "turbo":
+            if self.model_variant == "multilingual":
+                # Multilingual model supports 23 languages
+                from chatterbox.mtl_tts import ChatterboxMultilingualTTS
+
+                self._model = ChatterboxMultilingualTTS.from_pretrained(device=self.device)
+            elif self.model_variant == "turbo":
                 from chatterbox.tts_turbo import ChatterboxTurboTTS
 
                 self._model = ChatterboxTurboTTS.from_pretrained(device=self.device)
@@ -175,6 +230,7 @@ class ChatterboxEngine(TTSEngine):
         text: str,
         voice: Optional[str] = None,
         speed: float = 1.0,
+        language: Optional[str] = None,
         emotion_exaggeration: Optional[float] = None,
         cfg_weight: Optional[float] = None,
         save_path: Optional[Path] = None,
@@ -188,6 +244,8 @@ class ChatterboxEngine(TTSEngine):
             voice: Path to reference audio for voice cloning (3-10s recommended)
                    or ID of a previously cloned voice
             speed: Speed multiplier (affects cfg_weight; lower = slower)
+            language: Language code (e.g., "en", "fr", "ja") for multilingual model.
+                      Defaults to "en". Use list_languages() to see all supported.
             emotion_exaggeration: Expressiveness (0.0=monotone, 1.0=dramatic)
             cfg_weight: Reference speaker adherence (0.0-1.0)
             save_path: Where to save audio
@@ -196,6 +254,12 @@ class ChatterboxEngine(TTSEngine):
             EngineResult with audio and metadata
         """
         self._ensure_model_loaded()
+
+        # Handle language
+        lang = language or self.default_language
+        if self._is_multilingual and lang not in CHATTERBOX_LANGUAGES:
+            print(f"Warning: Language '{lang}' not supported. Using 'en'.")
+            lang = "en"
 
         # Handle emotion exaggeration
         exaggeration = emotion_exaggeration if emotion_exaggeration is not None else self.default_exaggeration
@@ -228,12 +292,18 @@ class ChatterboxEngine(TTSEngine):
         # Generate speech
         start = time.time()
 
-        wav = self._model.generate(
-            text,
-            audio_prompt_path=audio_prompt_path,
-            exaggeration=exaggeration,
-            cfg_weight=cfg,
-        )
+        # Build generate kwargs
+        generate_kwargs = {
+            "audio_prompt_path": audio_prompt_path,
+            "exaggeration": exaggeration,
+            "cfg_weight": cfg,
+        }
+
+        # Add language_id for multilingual model
+        if self._is_multilingual:
+            generate_kwargs["language_id"] = lang
+
+        wav = self._model.generate(text, **generate_kwargs)
 
         gen_time = time.time() - start
 
@@ -256,7 +326,8 @@ class ChatterboxEngine(TTSEngine):
         else:
             text_hash = secure_hash(text, length=8)
             voice_id = Path(voice).stem if voice else "default"
-            filename = f"chatterbox_{voice_id}_{text_hash}.wav"
+            lang_suffix = f"_{lang}" if self._is_multilingual else ""
+            filename = f"chatterbox_{voice_id}{lang_suffix}_{text_hash}.wav"
             output_path = safe_join_path(self.config.output_dir, filename)
 
         # Save audio
@@ -274,6 +345,7 @@ class ChatterboxEngine(TTSEngine):
             metadata={
                 "emotion_exaggeration": exaggeration,
                 "cfg_weight": cfg,
+                "language": lang,
                 "paralinguistic_tags": found_tags,
                 "has_voice_reference": audio_prompt_path is not None,
             },
@@ -284,6 +356,7 @@ class ChatterboxEngine(TTSEngine):
         text: str,
         voice: Optional[str] = None,
         speed: float = 1.0,
+        language: Optional[str] = None,
         emotion_exaggeration: Optional[float] = None,
         cfg_weight: Optional[float] = None,
         **kwargs,
@@ -291,6 +364,7 @@ class ChatterboxEngine(TTSEngine):
         """Generate speech and return raw audio samples."""
         self._ensure_model_loaded()
 
+        lang = language or self.default_language
         exaggeration = emotion_exaggeration if emotion_exaggeration is not None else self.default_exaggeration
         cfg = cfg_weight if cfg_weight is not None else self.default_cfg_weight
 
@@ -301,12 +375,16 @@ class ChatterboxEngine(TTSEngine):
             elif Path(voice).exists():
                 audio_prompt_path = voice
 
-        wav = self._model.generate(
-            text,
-            audio_prompt_path=audio_prompt_path,
-            exaggeration=exaggeration,
-            cfg_weight=cfg,
-        )
+        generate_kwargs = {
+            "audio_prompt_path": audio_prompt_path,
+            "exaggeration": exaggeration,
+            "cfg_weight": cfg,
+        }
+
+        if self._is_multilingual:
+            generate_kwargs["language_id"] = lang
+
+        wav = self._model.generate(text, **generate_kwargs)
 
         if hasattr(wav, "numpy"):
             samples = wav.squeeze().cpu().numpy()
@@ -382,6 +460,21 @@ class ChatterboxEngine(TTSEngine):
         """Get list of supported paralinguistic tags."""
         return PARALINGUISTIC_TAGS.copy()
 
+    def list_languages(self) -> List[str]:
+        """
+        Get list of supported languages.
+
+        Returns all 23 languages for multilingual model, or just ["en"] for turbo.
+        """
+        if self._is_multilingual:
+            return CHATTERBOX_LANGUAGES.copy()
+        return ["en"]
+
+    @staticmethod
+    def list_all_languages() -> List[str]:
+        """Get list of all languages supported by the multilingual model."""
+        return CHATTERBOX_LANGUAGES.copy()
+
     @staticmethod
     def format_with_tags(text: str, tags: Dict[str, List[int]]) -> str:
         """
@@ -427,6 +520,7 @@ class ChatterboxEngine(TTSEngine):
 def speak_chatterbox(
     text: str,
     voice: Optional[str] = None,
+    language: str = "en",
     emotion_exaggeration: float = 0.5,
     **kwargs,
 ) -> Path:
@@ -436,15 +530,17 @@ def speak_chatterbox(
     Args:
         text: Text to speak (can include [laugh], [sigh], etc.)
         voice: Path to reference audio for voice cloning
+        language: Language code (e.g., "en", "fr", "ja"). Supports 23 languages.
         emotion_exaggeration: 0.0 (monotone) to 1.0 (dramatic)
 
     Returns:
         Path to generated audio file
     """
-    engine = ChatterboxEngine()
+    engine = ChatterboxEngine(model_variant="multilingual")
     result = engine.speak(
         text,
         voice=voice,
+        language=language,
         emotion_exaggeration=emotion_exaggeration,
         **kwargs,
     )

@@ -95,6 +95,7 @@ if CHATTERBOX_AVAILABLE:
 # Global engine instances (lazy loaded)
 _engine: VoiceEngine | None = None
 _chatterbox_engine = None
+_f5tts_engine = None
 _dialogue_engine: DialogueEngine | None = None
 _voice_cloner: VoiceCloner | None = None
 _emotion_separator: EmotionTimbreSeparator | None = None
@@ -137,6 +138,27 @@ def get_chatterbox_engine():
             logger.error("Failed to initialize Chatterbox engine: %s", e)
             raise RuntimeError(f"Chatterbox engine initialization failed: {e}") from e
     return _chatterbox_engine
+
+
+def get_f5tts_engine():
+    """Get or create the F5-TTS engine singleton."""
+    global _f5tts_engine
+    if _f5tts_engine is None:
+        try:
+            from voice_soundboard.engines.f5tts import F5TTSEngine
+            logger.debug("Initializing F5-TTS engine...")
+            _f5tts_engine = F5TTSEngine()
+            logger.info("F5-TTS engine initialized")
+        except ImportError as e:
+            raise ImportError(
+                "F5-TTS is not installed. Install with:\n"
+                "  pip install voice-soundboard[f5tts]\n"
+                "Or: pip install f5-tts"
+            ) from e
+        except Exception as e:
+            logger.error("Failed to initialize F5-TTS engine: %s", e)
+            raise RuntimeError(f"F5-TTS engine initialization failed: {e}") from e
+    return _f5tts_engine
 
 
 def get_dialogue_engine() -> DialogueEngine:
@@ -522,10 +544,10 @@ async def list_tools() -> list[Tool]:
         Tool(
             name="speak_chatterbox",
             description=(
-                "Generate expressive speech with Chatterbox TTS. Supports paralinguistic tags "
-                "like [laugh], [sigh], [cough], [gasp], [chuckle] for natural non-speech sounds. "
-                "Also supports emotion exaggeration control (0.0=monotone to 1.0=dramatic) and "
-                "voice cloning from reference audio."
+                "Generate expressive multilingual speech with Chatterbox TTS. Supports 23 languages, "
+                "paralinguistic tags like [laugh], [sigh], [cough], [gasp], [chuckle] for natural "
+                "non-speech sounds, emotion exaggeration control (0.0=monotone to 1.0=dramatic), "
+                "and voice cloning from reference audio."
             ),
             inputSchema={
                 "type": "object",
@@ -537,6 +559,10 @@ async def list_tools() -> list[Tool]:
                     "voice": {
                         "type": "string",
                         "description": "Path to reference audio (3-10s) for voice cloning, or ID of previously cloned voice"
+                    },
+                    "language": {
+                        "type": "string",
+                        "description": "Language code: ar, da, de, el, en, es, fi, fr, he, hi, it, ja, ko, ms, nl, no, pl, pt, ru, sv, sw, tr, zh. Default: en"
                     },
                     "emotion_exaggeration": {
                         "type": "number",
@@ -556,6 +582,88 @@ async def list_tools() -> list[Tool]:
                     }
                 },
                 "required": ["text"]
+            }
+        ),
+        # F5-TTS tools (high-quality voice cloning)
+        Tool(
+            name="speak_f5tts",
+            description=(
+                "Generate high-quality speech with F5-TTS using Diffusion Transformer. "
+                "Excels at zero-shot voice cloning from 3-10 second reference audio. "
+                "Requires transcription of reference audio for best results."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "description": "Text to synthesize"
+                    },
+                    "voice": {
+                        "type": "string",
+                        "description": "Path to reference audio (3-10s) for voice cloning, or ID of previously cloned voice"
+                    },
+                    "ref_text": {
+                        "type": "string",
+                        "description": "Transcription of the reference audio (required for new references)"
+                    },
+                    "speed": {
+                        "type": "number",
+                        "minimum": 0.5,
+                        "maximum": 2.0,
+                        "description": "Speed multiplier (default: 1.0)"
+                    },
+                    "cfg_strength": {
+                        "type": "number",
+                        "minimum": 0.0,
+                        "maximum": 5.0,
+                        "description": "Reference adherence strength (default: 2.0)"
+                    },
+                    "nfe_step": {
+                        "type": "integer",
+                        "minimum": 8,
+                        "maximum": 64,
+                        "description": "Inference steps. Higher=better quality, slower (default: 32)"
+                    },
+                    "play": {
+                        "type": "boolean",
+                        "description": "Play audio immediately after generation (default: false)"
+                    }
+                },
+                "required": ["text"]
+            }
+        ),
+        Tool(
+            name="clone_voice_f5tts",
+            description=(
+                "Register a voice for F5-TTS cloning. Unlike Chatterbox, F5-TTS requires "
+                "transcription of the reference audio for accurate voice cloning."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "audio_path": {
+                        "type": "string",
+                        "description": "Path to reference audio file (3-10s recommended)"
+                    },
+                    "voice_id": {
+                        "type": "string",
+                        "description": "ID to assign to this voice (default: 'cloned')"
+                    },
+                    "transcription": {
+                        "type": "string",
+                        "description": "What is spoken in the reference audio (highly recommended)"
+                    }
+                },
+                "required": ["audio_path"]
+            }
+        ),
+        Tool(
+            name="list_chatterbox_languages",
+            description="List all 23 languages supported by Chatterbox multilingual model",
+            inputSchema={
+                "type": "object",
+                "properties": {}
             }
         ),
         Tool(
@@ -1410,6 +1518,13 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         return await handle_clone_voice(arguments)
     elif name == "list_cloned_voices":
         return await handle_list_cloned_voices(arguments)
+    elif name == "list_chatterbox_languages":
+        return await handle_list_chatterbox_languages(arguments)
+    # F5-TTS tools
+    elif name == "speak_f5tts":
+        return await handle_speak_f5tts(arguments)
+    elif name == "clone_voice_f5tts":
+        return await handle_clone_voice_f5tts(arguments)
     elif name == "list_paralinguistic_tags":
         return await handle_list_paralinguistic_tags(arguments)
     # Dialogue tools
@@ -1802,12 +1917,13 @@ async def handle_list_emotions(args: dict[str, Any]) -> list[TextContent]:
 
 
 async def handle_speak_chatterbox(args: dict[str, Any]) -> list[TextContent]:
-    """Generate expressive speech with Chatterbox."""
+    """Generate expressive multilingual speech with Chatterbox."""
     text = args.get("text", "")
     if not text:
         return [TextContent(type="text", text="Error: 'text' is required")]
 
     voice = args.get("voice")
+    language = args.get("language", "en")
     emotion_exaggeration = args.get("emotion_exaggeration")
     cfg_weight = args.get("cfg_weight")
     should_play = args.get("play", False)
@@ -1818,6 +1934,7 @@ async def handle_speak_chatterbox(args: dict[str, Any]) -> list[TextContent]:
         result = engine.speak(
             text=text,
             voice=voice,
+            language=language,
             emotion_exaggeration=emotion_exaggeration,
             cfg_weight=cfg_weight,
         )
@@ -1836,6 +1953,7 @@ async def handle_speak_chatterbox(args: dict[str, Any]) -> list[TextContent]:
             f"  File: {result.audio_path}\n"
             f"  Duration: {result.duration_seconds:.2f}s\n"
             f"  Speed: {result.realtime_factor:.1f}x realtime\n"
+            f"  Language: {result.metadata.get('language', 'en')}\n"
             f"  Emotion exaggeration: {result.metadata.get('emotion_exaggeration', 0.5)}\n"
             f"  CFG weight: {result.metadata.get('cfg_weight', 0.5)}"
             f"{tags_str}"
@@ -1940,6 +2058,142 @@ async def handle_list_paralinguistic_tags(args: dict[str, Any]) -> list[TextCont
     ])
 
     return [TextContent(type="text", text="\n".join(lines))]
+
+
+async def handle_list_chatterbox_languages(args: dict[str, Any]) -> list[TextContent]:
+    """List all 23 languages supported by Chatterbox multilingual."""
+    if not CHATTERBOX_AVAILABLE:
+        return [TextContent(
+            type="text",
+            text="Chatterbox is not installed. Install with:\n"
+                 "  pip install voice-soundboard[chatterbox]"
+        )]
+
+    from voice_soundboard.engines.chatterbox import CHATTERBOX_LANGUAGES
+
+    language_names = {
+        "ar": "Arabic", "da": "Danish", "de": "German", "el": "Greek",
+        "en": "English", "es": "Spanish", "fi": "Finnish", "fr": "French",
+        "he": "Hebrew", "hi": "Hindi", "it": "Italian", "ja": "Japanese",
+        "ko": "Korean", "ms": "Malay", "nl": "Dutch", "no": "Norwegian",
+        "pl": "Polish", "pt": "Portuguese", "ru": "Russian", "sv": "Swedish",
+        "sw": "Swahili", "tr": "Turkish", "zh": "Chinese",
+    }
+
+    lines = [
+        "Chatterbox Multilingual - 23 Supported Languages:",
+        "",
+    ]
+
+    for code in sorted(CHATTERBOX_LANGUAGES):
+        name = language_names.get(code, code)
+        lines.append(f"  {code} - {name}")
+
+    lines.extend([
+        "",
+        "Example usage:",
+        '  speak_chatterbox("Bonjour, comment allez-vous?", language="fr")',
+        '  speak_chatterbox("Guten Tag!", language="de")',
+        '  speak_chatterbox("こんにちは", language="ja")',
+    ])
+
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
+async def handle_speak_f5tts(args: dict[str, Any]) -> list[TextContent]:
+    """Generate high-quality speech with F5-TTS voice cloning."""
+    text = args.get("text", "")
+    if not text:
+        return [TextContent(type="text", text="Error: 'text' is required")]
+
+    voice = args.get("voice")
+    ref_text = args.get("ref_text")
+    speed = args.get("speed", 1.0)
+    cfg_strength = args.get("cfg_strength")
+    nfe_step = args.get("nfe_step")
+    should_play = args.get("play", False)
+
+    try:
+        engine = get_f5tts_engine()
+
+        result = engine.speak(
+            text=text,
+            voice=voice,
+            ref_text=ref_text,
+            speed=speed,
+            cfg_strength=cfg_strength,
+            nfe_step=nfe_step,
+        )
+
+        # Play if requested
+        if should_play:
+            await asyncio.to_thread(play_audio, result.audio_path)
+
+        response = (
+            f"Generated F5-TTS speech:\n"
+            f"  File: {result.audio_path}\n"
+            f"  Duration: {result.duration_seconds:.2f}s\n"
+            f"  Speed: {result.realtime_factor:.1f}x realtime\n"
+            f"  CFG strength: {result.metadata.get('cfg_strength', 2.0)}\n"
+            f"  NFE steps: {result.metadata.get('nfe_step', 32)}\n"
+            f"  Voice reference: {'Yes' if result.metadata.get('has_reference') else 'No'}"
+        )
+        return [TextContent(type="text", text=response)]
+
+    except ImportError as e:
+        return [TextContent(
+            type="text",
+            text="F5-TTS is not installed. Install with:\n"
+                 "  pip install voice-soundboard[f5tts]\n"
+                 f"Error: {e}"
+        )]
+    except ValueError as e:
+        return [TextContent(type="text", text=f"Error: {e}")]
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error generating F5-TTS speech: {e}")]
+
+
+async def handle_clone_voice_f5tts(args: dict[str, Any]) -> list[TextContent]:
+    """Register a voice for F5-TTS cloning with transcription."""
+    audio_path = args.get("audio_path")
+    if not audio_path:
+        return [TextContent(type="text", text="Error: 'audio_path' is required")]
+
+    voice_id = args.get("voice_id", "cloned")
+    transcription = args.get("transcription")
+
+    try:
+        engine = get_f5tts_engine()
+        registered_id = engine.clone_voice(
+            Path(audio_path),
+            voice_id,
+            transcription=transcription,
+        )
+
+        trans_note = ""
+        if not transcription:
+            trans_note = "\n  Note: No transcription provided. For best results, add transcription."
+
+        return [TextContent(
+            type="text",
+            text=f"Voice registered for F5-TTS!\n"
+                 f"  ID: {registered_id}\n"
+                 f"  Reference: {audio_path}\n"
+                 f"  Transcription: {transcription or '(not provided)'}\n"
+                 f"  Use with: speak_f5tts(text, voice='{registered_id}')"
+                 f"{trans_note}"
+        )]
+
+    except ImportError as e:
+        return [TextContent(
+            type="text",
+            text="F5-TTS is not installed. Install with:\n"
+                 "  pip install voice-soundboard[f5tts]"
+        )]
+    except FileNotFoundError as e:
+        return [TextContent(type="text", text=f"Error: {e}")]
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error cloning voice: {e}")]
 
 
 async def handle_speak_dialogue(args: dict[str, Any]) -> list[TextContent]:

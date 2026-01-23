@@ -31,17 +31,24 @@ class Language(Enum):
     ITALIAN = "it"
     RUSSIAN = "ru"
 
-    # Additional languages
-    HINDI = "hi"
+    # Additional languages (alphabetical)
     ARABIC = "ar"
+    CZECH = "cs"
+    DANISH = "da"
     DUTCH = "nl"
+    FINNISH = "fi"
+    GREEK = "el"
+    HEBREW = "he"
+    HINDI = "hi"
+    INDONESIAN = "id"
+    MALAY = "ms"
+    NORWEGIAN = "no"
     POLISH = "pl"
+    SWAHILI = "sw"
     SWEDISH = "sv"
+    THAI = "th"
     TURKISH = "tr"
     VIETNAMESE = "vi"
-    THAI = "th"
-    INDONESIAN = "id"
-    CZECH = "cs"
 
 
 # Language code to Language enum mapping
@@ -175,6 +182,126 @@ LANGUAGE_CONFIGS: Dict[str, LanguageConfig] = {
         native_name="العربية",
         stress_timed=True,
         typical_speaking_rate_wpm=130,
+        requires_romanization=True,
+    ),
+    # Additional languages supported by Chatterbox Multilingual
+    "cs": LanguageConfig(
+        code="cs",
+        name="Czech",
+        native_name="Čeština",
+        stress_timed=True,
+        typical_speaking_rate_wpm=145,
+    ),
+    "da": LanguageConfig(
+        code="da",
+        name="Danish",
+        native_name="Dansk",
+        stress_timed=True,
+        typical_speaking_rate_wpm=160,
+    ),
+    "nl": LanguageConfig(
+        code="nl",
+        name="Dutch",
+        native_name="Nederlands",
+        stress_timed=True,
+        typical_speaking_rate_wpm=155,
+    ),
+    "el": LanguageConfig(
+        code="el",
+        name="Greek",
+        native_name="Ελληνικά",
+        syllable_timed=True,
+        stress_timed=False,
+        typical_speaking_rate_wpm=150,
+    ),
+    "fi": LanguageConfig(
+        code="fi",
+        name="Finnish",
+        native_name="Suomi",
+        syllable_timed=True,
+        stress_timed=False,
+        typical_speaking_rate_wpm=140,
+    ),
+    "he": LanguageConfig(
+        code="he",
+        name="Hebrew",
+        native_name="עברית",
+        stress_timed=True,
+        typical_speaking_rate_wpm=140,
+        requires_romanization=True,
+    ),
+    "id": LanguageConfig(
+        code="id",
+        name="Indonesian",
+        native_name="Bahasa Indonesia",
+        syllable_timed=True,
+        stress_timed=False,
+        typical_speaking_rate_wpm=160,
+    ),
+    "ms": LanguageConfig(
+        code="ms",
+        name="Malay",
+        native_name="Bahasa Melayu",
+        syllable_timed=True,
+        stress_timed=False,
+        typical_speaking_rate_wpm=155,
+    ),
+    "no": LanguageConfig(
+        code="no",
+        name="Norwegian",
+        native_name="Norsk",
+        stress_timed=True,
+        typical_speaking_rate_wpm=155,
+    ),
+    "pl": LanguageConfig(
+        code="pl",
+        name="Polish",
+        native_name="Polski",
+        syllable_timed=True,
+        stress_timed=False,
+        typical_speaking_rate_wpm=145,
+    ),
+    "sv": LanguageConfig(
+        code="sv",
+        name="Swedish",
+        native_name="Svenska",
+        stress_timed=True,
+        typical_speaking_rate_wpm=155,
+    ),
+    "sw": LanguageConfig(
+        code="sw",
+        name="Swahili",
+        native_name="Kiswahili",
+        syllable_timed=True,
+        stress_timed=False,
+        typical_speaking_rate_wpm=150,
+    ),
+    "th": LanguageConfig(
+        code="th",
+        name="Thai",
+        native_name="ภาษาไทย",
+        has_tones=True,
+        syllable_timed=True,
+        stress_timed=False,
+        typical_speaking_rate_wpm=150,
+        requires_romanization=True,
+    ),
+    "tr": LanguageConfig(
+        code="tr",
+        name="Turkish",
+        native_name="Türkçe",
+        syllable_timed=True,
+        stress_timed=False,
+        typical_speaking_rate_wpm=145,
+    ),
+    "vi": LanguageConfig(
+        code="vi",
+        name="Vietnamese",
+        native_name="Tiếng Việt",
+        has_tones=True,
+        syllable_timed=True,
+        stress_timed=False,
+        typical_speaking_rate_wpm=160,
         requires_romanization=True,
     ),
 }
