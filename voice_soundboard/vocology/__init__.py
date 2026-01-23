@@ -103,6 +103,19 @@ from voice_soundboard.vocology.rhythm import (
     add_rhythm_variability,
 )
 
+from voice_soundboard.vocology.presets import (
+    VoicePreset,
+    PresetConfig,
+    PRESET_CONFIGS,
+    apply_preset,
+    get_preset_config,
+    list_presets,
+    apply_narrator,
+    apply_authority,
+    apply_young,
+    apply_elderly,
+)
+
 __all__ = [
     # Voice Quality Parameters
     "VoiceQualityMetrics",
@@ -166,4 +179,15 @@ __all__ = [
     "analyze_rhythm",
     "analyze_rhythm_zones",
     "add_rhythm_variability",
+    # Voice Presets
+    "VoicePreset",
+    "PresetConfig",
+    "PRESET_CONFIGS",
+    "apply_preset",
+    "get_preset_config",
+    "list_presets",
+    "apply_narrator",
+    "apply_authority",
+    "apply_young",
+    "apply_elderly",
 ]
