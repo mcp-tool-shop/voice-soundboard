@@ -172,3 +172,49 @@ voice_soundboard/vocology/
 - Keep intensity subtle - natural > dramatic
 - Each preset should have a clear use case
 - Presets should be composable (can layer/combine)
+
+---
+
+## Lessons Learned (v1.2.0 Testing Session)
+
+### What Worked Well
+- **Humanization pipeline** scored 9/10 - breaths + pitch variation make a real difference
+- **Formant shifting** scored 9/10 - deeper/brighter voices work great
+- **DEEP_AUTHORITY preset** - gravelly texture via jitter was effective
+
+### Current Limitations
+1. **Presets sound too similar** - formant shifts alone aren't enough differentiation
+2. **Phonation effects unusable** - BREATHY/CREAKY are garbled at any useful intensity
+3. **Testing with wrong voice gender** - HUSKY_INTIMATE on male voice = "dude with husky voice"
+
+### Ideas for Better Differentiation
+
+#### Short-term (v1.3.x)
+- [ ] **Larger formant shifts** - current 2-8% too subtle, try 15-25% for character voices
+- [ ] **Pitch shifting** - add actual F0 shift, not just formant (requires pitch-shift algo)
+- [ ] **Speed/tempo variation** - time-stretch for fast/slow speakers
+- [ ] **EQ profiles** - boost/cut frequency bands for "radio voice", "telephone", etc.
+
+#### Medium-term (v1.4.x)
+- [ ] **Fix phonation synthesis** - lower intensity defaults, better crossfade blending
+- [ ] **Combine multiple effects** - formant + phonation + EQ as layered chain
+- [ ] **Voice-specific presets** - separate male/female/child preset variants
+- [ ] **A/B testing framework** - systematic comparison of preset variations
+
+#### Long-term (v1.5.x)
+- [ ] **Neural voice conversion** - use ML models for more dramatic transformations
+- [ ] **Reference audio matching** - "make it sound like this sample"
+- [ ] **Real-time preset preview** - instant feedback while tweaking parameters
+
+### Research Directions
+- Study vocoder-based voice modification (WORLD, STRAIGHT)
+- Look into pitch-synchronous overlap-add (PSOLA) for cleaner pitch shifting
+- Investigate spectral envelope manipulation beyond simple formant ratios
+- Consider LPC-based voice transformation for more dramatic effects
+
+### Testing Protocol for Future Sessions
+1. Always use **real TTS audio** (not synthetic tones)
+2. Test each preset with **male AND female voices**
+3. Compare **before/after** side-by-side
+4. Score on **distinctiveness** not just quality
+5. Document which parameters made the biggest audible difference
