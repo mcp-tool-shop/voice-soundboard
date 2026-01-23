@@ -1,11 +1,31 @@
 # Voice Soundboard Test Plan
 
+## Current Status
+
+| Status | Count |
+|--------|-------|
+| ✅ Passed `[x]` | 435 |
+| ❌ Failed `[FAIL]` | 7 |
+| ⬜ Pending `[ ]` | 753 |
+| **Total** | **1195** |
+
+**Last Updated:** 2026-01-23
+
+---
+
 ## Instructions for Claude
 
 Pick **20 tests** from this list and execute them. After each test:
 1. Mark the test with `[x]` if it passes
 2. Mark with `[FAIL]` if it fails, and note the issue
 3. Continue until you've completed 20 tests
+
+**Priority Order:**
+1. Phase 10 (Humanization & Rhythm) - 165 new tests, all pending
+2. Phase 9 (Vocology) - 154 tests, all pending
+3. Phase 8 (F5-TTS & Multilingual) - ~190 tests, all pending
+4. Fix the 7 failed tests
+5. Phases 2-7 (Future features)
 
 When done, save this file and report which tests passed/failed.
 
@@ -2160,4 +2180,697 @@ import pytest
 @pytest.mark.skipif(sys.version_info >= (3, 12), reason="Chatterbox requires Python 3.11")
 def test_chatterbox_integration():
     ...
+
+---
+
+## PHASE 9: VOCOLOGY MODULE (v1.2.0)
+
+**Date Added: 2026-01-23**
+
+These tests cover the new vocology module for voice quality analysis, formant manipulation, phonation synthesis, biomarker analysis, and prosody control.
+
+### Module: vocology/parameters.py
+
+#### VoiceQualityMetrics Dataclass
+- [ ] TEST-VQM-01: VoiceQualityMetrics has all required fields (f0_mean, f0_std, etc.)
+- [ ] TEST-VQM-02: VoiceQualityMetrics can be created with keyword arguments
+- [ ] TEST-VQM-03: VoiceQualityMetrics fields have correct types (float)
+- [ ] TEST-VQM-04: VoiceQualityMetrics `overall_quality` property returns string
+- [ ] TEST-VQM-05: VoiceQualityMetrics `to_dict()` returns serializable dict
+
+#### JitterType and ShimmerType Enums
+- [ ] TEST-VQM-06: JitterType.LOCAL value is "local"
+- [ ] TEST-VQM-07: JitterType.ABSOLUTE value is "absolute"
+- [ ] TEST-VQM-08: JitterType.RAP value is "rap"
+- [ ] TEST-VQM-09: JitterType.PPQ5 value is "ppq5"
+- [ ] TEST-VQM-10: ShimmerType.LOCAL value is "local"
+- [ ] TEST-VQM-11: ShimmerType.APQ3 value is "apq3"
+- [ ] TEST-VQM-12: ShimmerType.APQ5 value is "apq5"
+- [ ] TEST-VQM-13: ShimmerType.APQ11 value is "apq11"
+
+#### VoiceQualityAnalyzer Class
+- [ ] TEST-VQM-14: VoiceQualityAnalyzer.__init__() with default parameters
+- [ ] TEST-VQM-15: VoiceQualityAnalyzer.__init__(sample_rate=48000) sets sample rate
+- [ ] TEST-VQM-16: VoiceQualityAnalyzer.analyze() accepts numpy array
+- [ ] TEST-VQM-17: VoiceQualityAnalyzer.analyze() accepts file path string
+- [ ] TEST-VQM-18: VoiceQualityAnalyzer.analyze() returns VoiceQualityMetrics
+- [ ] TEST-VQM-19: VoiceQualityAnalyzer.analyze() extracts F0 mean correctly
+- [ ] TEST-VQM-20: VoiceQualityAnalyzer.analyze() calculates jitter_local
+- [ ] TEST-VQM-21: VoiceQualityAnalyzer.analyze() calculates shimmer_local
+- [ ] TEST-VQM-22: VoiceQualityAnalyzer.analyze() calculates HNR (harmonics-to-noise)
+- [ ] TEST-VQM-23: VoiceQualityAnalyzer.analyze() calculates CPP (cepstral peak prominence)
+- [ ] TEST-VQM-24: VoiceQualityAnalyzer.analyze() with silent audio returns reasonable defaults
+- [ ] TEST-VQM-25: VoiceQualityAnalyzer.analyze() with noise-only audio handles edge case
+
+#### Convenience Functions
+- [ ] TEST-VQM-26: analyze_voice_quality() function works with numpy array
+- [ ] TEST-VQM-27: analyze_voice_quality() function works with file path
+- [ ] TEST-VQM-28: get_jitter() returns float for local jitter
+- [ ] TEST-VQM-29: get_jitter(jitter_type=JitterType.RAP) returns RAP jitter
+- [ ] TEST-VQM-30: get_shimmer() returns float for local shimmer
+- [ ] TEST-VQM-31: get_shimmer(shimmer_type=ShimmerType.APQ5) returns APQ5 shimmer
+- [ ] TEST-VQM-32: get_hnr() returns HNR in dB
+- [ ] TEST-VQM-33: get_cpp() returns CPP in dB
+- [ ] TEST-VQM-34: get_f0_stats() returns dict with mean, std, min, max
+
+---
+
+### Module: vocology/formants.py
+
+#### FormantAnalysis Dataclass
+- [ ] TEST-FMT-01: FormantAnalysis has f1, f2, f3, f4 fields
+- [ ] TEST-FMT-02: FormantAnalysis has bandwidth fields (b1, b2, b3, b4)
+- [ ] TEST-FMT-03: FormantAnalysis.to_dict() returns serializable dict
+- [ ] TEST-FMT-04: FormantAnalysis fields are floats
+
+#### FormantAnalyzer Class
+- [ ] TEST-FMT-05: FormantAnalyzer.__init__() with default parameters
+- [ ] TEST-FMT-06: FormantAnalyzer.__init__(num_formants=5) sets formant count
+- [ ] TEST-FMT-07: FormantAnalyzer.analyze() accepts numpy array
+- [ ] TEST-FMT-08: FormantAnalyzer.analyze() returns FormantAnalysis
+- [ ] TEST-FMT-09: FormantAnalyzer.analyze() extracts F1 in typical range (200-1000 Hz)
+- [ ] TEST-FMT-10: FormantAnalyzer.analyze() extracts F2 in typical range (600-2500 Hz)
+- [ ] TEST-FMT-11: FormantAnalyzer.analyze() extracts F3 in typical range (1500-3500 Hz)
+- [ ] TEST-FMT-12: FormantAnalyzer.analyze_trajectory() returns time-varying formants
+
+#### FormantShifter Class
+- [ ] TEST-FMT-13: FormantShifter.__init__() with default parameters
+- [ ] TEST-FMT-14: FormantShifter.shift(audio, ratio=0.8) deepens voice
+- [ ] TEST-FMT-15: FormantShifter.shift(audio, ratio=1.2) brightens voice
+- [ ] TEST-FMT-16: FormantShifter.shift(audio, ratio=1.0) returns unchanged audio
+- [ ] TEST-FMT-17: FormantShifter.shift() preserves_pitch=True maintains F0
+- [ ] TEST-FMT-18: FormantShifter.shift() preserves audio length
+- [ ] TEST-FMT-19: FormantShifter.shift() output is valid numpy array
+- [ ] TEST-FMT-20: FormantShifter.shift() with extreme ratio (0.5) handles gracefully
+- [ ] TEST-FMT-21: FormantShifter.shift() with extreme ratio (2.0) handles gracefully
+
+#### Convenience Functions
+- [ ] TEST-FMT-22: analyze_formants() function works
+- [ ] TEST-FMT-23: shift_formants() convenience function works
+- [ ] TEST-FMT-24: shift_formants(audio, ratio=0.9) returns shifted audio
+
+---
+
+### Module: vocology/phonation.py
+
+#### PhonationType Enum
+- [ ] TEST-PHN-01: PhonationType.MODAL value is "modal"
+- [ ] TEST-PHN-02: PhonationType.BREATHY value is "breathy"
+- [ ] TEST-PHN-03: PhonationType.CREAKY value is "creaky"
+- [ ] TEST-PHN-04: PhonationType.HARSH value is "harsh"
+- [ ] TEST-PHN-05: PhonationType.FALSETTO value is "falsetto"
+- [ ] TEST-PHN-06: PhonationType.WHISPER value is "whisper"
+
+#### PhonationAnalyzer Class
+- [ ] TEST-PHN-07: PhonationAnalyzer.__init__() with default parameters
+- [ ] TEST-PHN-08: PhonationAnalyzer.analyze() accepts numpy array
+- [ ] TEST-PHN-09: PhonationAnalyzer.analyze() returns PhonationType
+- [ ] TEST-PHN-10: PhonationAnalyzer.analyze() with confidence returns (type, score) tuple
+- [ ] TEST-PHN-11: PhonationAnalyzer.analyze_features() returns dict of acoustic features
+- [ ] TEST-PHN-12: PhonationAnalyzer identifies modal phonation in clear speech
+- [ ] TEST-PHN-13: PhonationAnalyzer detects high jitter as indicator of creaky voice
+
+#### PhonationSynthesizer Class
+- [ ] TEST-PHN-14: PhonationSynthesizer.__init__() with default parameters
+- [ ] TEST-PHN-15: PhonationSynthesizer.apply(audio, PhonationType.BREATHY) adds breathiness
+- [ ] TEST-PHN-16: PhonationSynthesizer.apply(audio, PhonationType.CREAKY) adds creak
+- [ ] TEST-PHN-17: PhonationSynthesizer.apply(audio, PhonationType.HARSH) adds harshness
+- [ ] TEST-PHN-18: PhonationSynthesizer.apply(audio, PhonationType.WHISPER) adds whisper
+- [ ] TEST-PHN-19: PhonationSynthesizer.apply() with intensity=0 returns original
+- [ ] TEST-PHN-20: PhonationSynthesizer.apply() with intensity=1 applies full effect
+- [ ] TEST-PHN-21: PhonationSynthesizer.apply() with intensity=0.5 applies half effect
+- [ ] TEST-PHN-22: PhonationSynthesizer.apply() preserves audio length
+- [ ] TEST-PHN-23: PhonationSynthesizer.apply() output is valid numpy array
+
+#### Convenience Functions
+- [ ] TEST-PHN-24: detect_phonation() function works
+- [ ] TEST-PHN-25: apply_phonation() convenience function works
+- [ ] TEST-PHN-26: add_breathiness() convenience function works
+- [ ] TEST-PHN-27: add_creak() convenience function works
+
+---
+
+### Module: vocology/biomarkers.py
+
+#### VocalBiomarkers Dataclass
+- [ ] TEST-BIO-01: VocalBiomarkers has quality_metrics field
+- [ ] TEST-BIO-02: VocalBiomarkers has fatigue_level field
+- [ ] TEST-BIO-03: VocalBiomarkers has stress_indicators field
+- [ ] TEST-BIO-04: VocalBiomarkers has warnings list
+- [ ] TEST-BIO-05: VocalBiomarkers.to_dict() returns serializable dict
+
+#### VoiceHealthAnalyzer Class
+- [ ] TEST-BIO-06: VoiceHealthAnalyzer.__init__() with default parameters
+- [ ] TEST-BIO-07: VoiceHealthAnalyzer.analyze() accepts numpy array
+- [ ] TEST-BIO-08: VoiceHealthAnalyzer.analyze() returns VocalBiomarkers
+- [ ] TEST-BIO-09: VoiceHealthAnalyzer.analyze() includes voice quality metrics
+- [ ] TEST-BIO-10: VoiceHealthAnalyzer.analyze() assesses fatigue level
+- [ ] TEST-BIO-11: VoiceHealthAnalyzer.analyze() detects stress indicators
+- [ ] TEST-BIO-12: VoiceHealthAnalyzer.analyze() generates warnings for concerning values
+
+#### VoiceFatigueMonitor Class
+- [ ] TEST-BIO-13: VoiceFatigueMonitor.__init__() with default parameters
+- [ ] TEST-BIO-14: VoiceFatigueMonitor.add_sample() stores sample with timestamp
+- [ ] TEST-BIO-15: VoiceFatigueMonitor.add_sample() extracts metrics from audio
+- [ ] TEST-BIO-16: VoiceFatigueMonitor.get_fatigue_report() returns trend analysis
+- [ ] TEST-BIO-17: VoiceFatigueMonitor.get_fatigue_report() includes recommendation
+- [ ] TEST-BIO-18: VoiceFatigueMonitor detects increasing strain over time
+- [ ] TEST-BIO-19: VoiceFatigueMonitor.clear() removes all samples
+- [ ] TEST-BIO-20: VoiceFatigueMonitor.get_history() returns list of samples
+
+#### Convenience Functions
+- [ ] TEST-BIO-21: analyze_biomarkers() function works
+- [ ] TEST-BIO-22: assess_vocal_fatigue() function works
+- [ ] TEST-BIO-23: get_voice_health_summary() returns readable string
+
+---
+
+### Module: vocology/prosody.py
+
+#### ProsodyContour Dataclass
+- [ ] TEST-PRO-01: ProsodyContour has pitch_contour field (numpy array)
+- [ ] TEST-PRO-02: ProsodyContour has duration_contour field
+- [ ] TEST-PRO-03: ProsodyContour has energy_contour field
+- [ ] TEST-PRO-04: ProsodyContour.to_dict() returns serializable dict
+
+#### ProsodyAnalyzer Class
+- [ ] TEST-PRO-05: ProsodyAnalyzer.__init__() with default parameters
+- [ ] TEST-PRO-06: ProsodyAnalyzer.analyze() accepts numpy array
+- [ ] TEST-PRO-07: ProsodyAnalyzer.analyze() returns ProsodyContour
+- [ ] TEST-PRO-08: ProsodyAnalyzer.analyze() extracts pitch contour
+- [ ] TEST-PRO-09: ProsodyAnalyzer.analyze() extracts energy contour
+- [ ] TEST-PRO-10: ProsodyAnalyzer.get_pitch_stats() returns dict with mean, range, std
+- [ ] TEST-PRO-11: ProsodyAnalyzer.get_speaking_rate() returns syllables per second estimate
+- [ ] TEST-PRO-12: ProsodyAnalyzer.detect_pauses() returns list of pause locations
+
+#### ProsodyModifier Class
+- [ ] TEST-PRO-13: ProsodyModifier.__init__() with default parameters
+- [ ] TEST-PRO-14: ProsodyModifier.modify_pitch(audio, ratio=1.2) raises pitch
+- [ ] TEST-PRO-15: ProsodyModifier.modify_pitch(audio, ratio=0.8) lowers pitch
+- [ ] TEST-PRO-16: ProsodyModifier.modify_pitch(audio, semitones=2) raises by 2 semitones
+- [ ] TEST-PRO-17: ProsodyModifier.modify_pitch(audio, semitones=-3) lowers by 3 semitones
+- [ ] TEST-PRO-18: ProsodyModifier.modify_duration(audio, ratio=0.5) speeds up 2x
+- [ ] TEST-PRO-19: ProsodyModifier.modify_duration(audio, ratio=2.0) slows down 2x
+- [ ] TEST-PRO-20: ProsodyModifier.modify_energy(audio, ratio=0.5) quietens
+- [ ] TEST-PRO-21: ProsodyModifier.modify_energy(audio, ratio=2.0) amplifies
+- [ ] TEST-PRO-22: ProsodyModifier preserves audio quality (no significant artifacts)
+
+#### Convenience Functions
+- [ ] TEST-PRO-23: analyze_prosody() function works
+- [ ] TEST-PRO-24: modify_pitch() convenience function works
+- [ ] TEST-PRO-25: modify_duration() convenience function works
+- [ ] TEST-PRO-26: modify_energy() convenience function works
+
+---
+
+### Module: vocology/__init__.py
+
+#### Exports
+- [ ] TEST-VOC-01: vocology module exports VoiceQualityMetrics
+- [ ] TEST-VOC-02: vocology module exports VoiceQualityAnalyzer
+- [ ] TEST-VOC-03: vocology module exports FormantAnalysis
+- [ ] TEST-VOC-04: vocology module exports FormantShifter
+- [ ] TEST-VOC-05: vocology module exports PhonationType
+- [ ] TEST-VOC-06: vocology module exports PhonationSynthesizer
+- [ ] TEST-VOC-07: vocology module exports VocalBiomarkers
+- [ ] TEST-VOC-08: vocology module exports VoiceFatigueMonitor
+- [ ] TEST-VOC-09: vocology module exports ProsodyContour
+- [ ] TEST-VOC-10: vocology module exports ProsodyModifier
+
+---
+
+### Integration Tests: Vocology Pipeline
+
+#### Voice Quality to Formant Pipeline
+- [ ] TEST-VOC-INT-01: Analyze voice quality then shift formants preserves metrics
+- [ ] TEST-VOC-INT-02: FormantShifter output can be re-analyzed
+
+#### Phonation and Prosody Pipeline
+- [ ] TEST-VOC-INT-03: Apply phonation effect then modify prosody
+- [ ] TEST-VOC-INT-04: Modify prosody then apply phonation effect
+
+#### Biomarker Pipeline
+- [ ] TEST-VOC-INT-05: Full biomarker analysis on TTS-generated audio
+- [ ] TEST-VOC-INT-06: Fatigue monitor tracks multiple samples over time
+- [ ] TEST-VOC-INT-07: Health analyzer generates appropriate warnings
+
+#### End-to-End Voice Modification
+- [ ] TEST-VOC-INT-08: Chain: analyze → shift formants → apply phonation → modify prosody
+- [ ] TEST-VOC-INT-09: Voice conversion: extract metrics, apply to different audio
+- [ ] TEST-VOC-INT-10: Voice aging: deeper formants + creaky phonation + slower prosody
+
+---
+
+## VOCOLOGY TEST SUMMARY
+
+| Module | Total Tests | Priority |
+|--------|-------------|----------|
+| vocology/parameters.py | 34 | HIGH |
+| vocology/formants.py | 24 | HIGH |
+| vocology/phonation.py | 27 | HIGH |
+| vocology/biomarkers.py | 23 | MEDIUM |
+| vocology/prosody.py | 26 | HIGH |
+| vocology/__init__.py | 10 | MEDIUM |
+| Integration Tests | 10 | MEDIUM |
+| **PHASE 9 TOTAL** | **154** | - |
+
+---
+
+## UPDATED COMBINED TEST COUNTS (v1.2.0)
+
+| Category | Tests |
+|----------|-------|
+| Original Test Plan (v0.1.0) | 254 |
+| Additional Tests (Audit) | 89 |
+| Phase 1: Chatterbox (v0.2.0) | 115 |
+| Phases 2-7 (Future) | 57 |
+| Normalizer (v1.0.1) | 101 |
+| Web Server (v1.0.1) | 70 |
+| Phase 8: F5-TTS & Multilingual (v0.3.0) | 190 |
+| **Phase 9: Vocology Module (v1.2.0)** | **154** |
+| **TOTAL TESTS DEFINED** | **1030** |
+
+---
+
+## TEST EXECUTION PRIORITY FOR PHASE 9
+
+### Session 18 (Critical - Voice Quality)
+**Target: 40 tests**
+
+Execute first (core functionality):
+1. TEST-VQM-01 to TEST-VQM-25 (VoiceQualityAnalyzer core)
+2. TEST-VQM-26 to TEST-VQM-34 (convenience functions)
+
+### Session 19 (High Priority - Formants & Phonation)
+**Target: 51 tests**
+
+Execute:
+1. TEST-FMT-01 to TEST-FMT-24 (FormantAnalyzer/Shifter)
+2. TEST-PHN-01 to TEST-PHN-27 (PhonationAnalyzer/Synthesizer)
+
+### Session 20 (Medium Priority - Biomarkers & Prosody)
+**Target: 49 tests**
+
+Execute:
+1. TEST-BIO-01 to TEST-BIO-23 (VocalBiomarkers/FatigueMonitor)
+2. TEST-PRO-01 to TEST-PRO-26 (ProsodyAnalyzer/Modifier)
+
+### Session 21 (Final - Exports & Integration)
+**Target: 20 tests**
+
+Execute:
+1. TEST-VOC-01 to TEST-VOC-10 (module exports)
+2. TEST-VOC-INT-01 to TEST-VOC-INT-10 (integration tests)
+
+---
+
+## NOTES FOR IMPLEMENTING VOCOLOGY TESTS
+
+### Test File Location
+- Vocology tests: `tests/test_vocology.py` (CREATE NEW)
+
+### Test Fixtures
+```python
+import pytest
+import numpy as np
+
+@pytest.fixture
+def sample_audio():
+    """Generate 1 second of sine wave at 440Hz for testing."""
+    sr = 24000
+    t = np.linspace(0, 1, sr)
+    # Simple sine wave with some harmonics
+    audio = 0.5 * np.sin(2 * np.pi * 440 * t)
+    audio += 0.25 * np.sin(2 * np.pi * 880 * t)
+    audio += 0.125 * np.sin(2 * np.pi * 1320 * t)
+    return audio.astype(np.float32)
+
+@pytest.fixture
+def voiced_audio(tmp_path):
+    """Load a real voiced audio sample for accurate testing."""
+    # Use a TTS engine to generate test audio
+    from voice_soundboard import VoiceEngine
+    engine = VoiceEngine()
+    result = engine.speak("Hello world, this is a test.", save_path=tmp_path / "test.wav")
+    return result.audio_path
+```
+
+### Key Assertions
+- F0 values should be in human range (50-500 Hz)
+- Jitter should be low for healthy voice (<1.5%)
+- Shimmer should be low for healthy voice (<3%)
+- HNR should be positive for voiced speech (>10 dB)
+- Formant shifts should preserve audio length
+- Phonation effects should not clip audio
+- Prosody modifications should maintain audio integrity
+```
+
+---
+
+# PHASE 10: VOCOLOGY HUMANIZATION & RHYTHM (v1.3.0)
+
+These tests cover the new humanization and rhythm analysis modules for making TTS output sound more natural.
+
+---
+
+## Module: vocology/humanize.py
+
+### BreathType Enum
+- [ ] TEST-HUM-01: BreathType.QUICK has correct value "quick"
+- [ ] TEST-HUM-02: BreathType.MEDIUM has correct value "medium"
+- [ ] TEST-HUM-03: BreathType.DEEP has correct value "deep"
+- [ ] TEST-HUM-04: BreathType.GASP has correct value "gasp"
+- [ ] TEST-HUM-05: BreathType.SIGH has correct value "sigh"
+- [ ] TEST-HUM-06: BreathType.NASAL has correct value "nasal"
+
+### EmotionalState Enum
+- [ ] TEST-HUM-07: EmotionalState.NEUTRAL has correct value "neutral"
+- [ ] TEST-HUM-08: EmotionalState.EXCITED has correct value "excited"
+- [ ] TEST-HUM-09: EmotionalState.CALM has correct value "calm"
+- [ ] TEST-HUM-10: EmotionalState.TIRED has correct value "tired"
+- [ ] TEST-HUM-11: EmotionalState.ANXIOUS has correct value "anxious"
+- [ ] TEST-HUM-12: EmotionalState.CONFIDENT has correct value "confident"
+- [ ] TEST-HUM-13: EmotionalState.INTIMATE has correct value "intimate"
+
+### BreathConfig Dataclass
+- [ ] TEST-HUM-14: BreathConfig has default enabled=True
+- [ ] TEST-HUM-15: BreathConfig has default volume_db=-24.0
+- [ ] TEST-HUM-16: BreathConfig has default pre_phrase_offset_ms=150
+- [ ] TEST-HUM-17: BreathConfig has default min_phrase_gap_ms=300
+- [ ] TEST-HUM-18: BreathConfig has default intensity=0.25
+- [ ] TEST-HUM-19: BreathConfig accepts custom values
+
+### PitchHumanizeConfig Dataclass
+- [ ] TEST-HUM-20: PitchHumanizeConfig has enabled field
+- [ ] TEST-HUM-21: PitchHumanizeConfig has jitter_amount field
+- [ ] TEST-HUM-22: PitchHumanizeConfig has drift_amount field
+- [ ] TEST-HUM-23: PitchHumanizeConfig has scoop_probability field
+- [ ] TEST-HUM-24: PitchHumanizeConfig accepts custom values
+
+### TimingHumanizeConfig Dataclass
+- [ ] TEST-HUM-25: TimingHumanizeConfig has enabled field
+- [ ] TEST-HUM-26: TimingHumanizeConfig has syllable_variation_ms field
+- [ ] TEST-HUM-27: TimingHumanizeConfig has phrase_boundary_pause_ms field
+- [ ] TEST-HUM-28: TimingHumanizeConfig accepts custom values
+
+### HumanizeConfig Dataclass
+- [ ] TEST-HUM-29: HumanizeConfig contains breath_config
+- [ ] TEST-HUM-30: HumanizeConfig contains pitch_config
+- [ ] TEST-HUM-31: HumanizeConfig contains timing_config
+- [ ] TEST-HUM-32: HumanizeConfig has emotional_state field
+- [ ] TEST-HUM-33: HumanizeConfig.from_emotion() returns correct preset for EXCITED
+- [ ] TEST-HUM-34: HumanizeConfig.from_emotion() returns correct preset for CALM
+- [ ] TEST-HUM-35: HumanizeConfig.from_emotion() returns correct preset for TIRED
+- [ ] TEST-HUM-36: HumanizeConfig.from_emotion() returns correct preset for ANXIOUS
+- [ ] TEST-HUM-37: HumanizeConfig.from_emotion() returns correct preset for CONFIDENT
+- [ ] TEST-HUM-38: HumanizeConfig.from_emotion() returns correct preset for INTIMATE
+
+### BreathGenerator Class
+- [ ] TEST-HUM-39: BreathGenerator initializes with default sample_rate
+- [ ] TEST-HUM-40: BreathGenerator.generate() returns numpy array
+- [ ] TEST-HUM-41: BreathGenerator.generate(BreathType.QUICK) returns 100-150ms audio
+- [ ] TEST-HUM-42: BreathGenerator.generate(BreathType.MEDIUM) returns 200-300ms audio
+- [ ] TEST-HUM-43: BreathGenerator.generate(BreathType.DEEP) returns 300-500ms audio
+- [ ] TEST-HUM-44: BreathGenerator applies intensity parameter correctly
+- [ ] TEST-HUM-45: BreathGenerator output is normalized to not clip
+
+### BreathInserter Class
+- [ ] TEST-HUM-46: BreathInserter initializes with BreathConfig
+- [ ] TEST-HUM-47: BreathInserter.detect_phrase_boundaries() finds silence gaps
+- [ ] TEST-HUM-48: BreathInserter.insert() adds breaths before phrases
+- [ ] TEST-HUM-49: BreathInserter respects min_phrase_gap_ms threshold
+- [ ] TEST-HUM-50: BreathInserter applies correct volume_db to breaths
+- [ ] TEST-HUM-51: BreathInserter selects appropriate breath type based on phrase length
+- [ ] TEST-HUM-52: BreathInserter returns tuple (audio, sample_rate)
+- [ ] TEST-HUM-53: BreathInserter output length >= input length
+
+### PitchHumanizer Class
+- [ ] TEST-HUM-54: PitchHumanizer initializes with PitchHumanizeConfig
+- [ ] TEST-HUM-55: PitchHumanizer.humanize() returns tuple (audio, sample_rate)
+- [ ] TEST-HUM-56: PitchHumanizer adds micro-jitter to pitch contour
+- [ ] TEST-HUM-57: PitchHumanizer adds drift to pitch contour
+- [ ] TEST-HUM-58: PitchHumanizer applies scooping at phrase starts
+- [ ] TEST-HUM-59: PitchHumanizer output length equals input length
+- [ ] TEST-HUM-60: PitchHumanizer does not clip output audio
+- [ ] TEST-HUM-61: PitchHumanizer with disabled config returns unchanged audio
+
+### VoiceHumanizer Class
+- [ ] TEST-HUM-62: VoiceHumanizer initializes with default config
+- [ ] TEST-HUM-63: VoiceHumanizer initializes with custom HumanizeConfig
+- [ ] TEST-HUM-64: VoiceHumanizer.humanize() returns tuple (audio, sample_rate)
+- [ ] TEST-HUM-65: VoiceHumanizer applies breath insertion when enabled
+- [ ] TEST-HUM-66: VoiceHumanizer applies pitch humanization when enabled
+- [ ] TEST-HUM-67: VoiceHumanizer applies timing variation when enabled
+- [ ] TEST-HUM-68: VoiceHumanizer chains all effects correctly
+- [ ] TEST-HUM-69: VoiceHumanizer.humanize() with is_question=True adds rising inflection
+- [ ] TEST-HUM-70: VoiceHumanizer output does not clip
+
+### Convenience Functions
+- [ ] TEST-HUM-71: humanize_audio() function works with file path input
+- [ ] TEST-HUM-72: humanize_audio() function works with numpy array input
+- [ ] TEST-HUM-73: humanize_audio() accepts emotional_state parameter
+- [ ] TEST-HUM-74: add_breaths() function adds breaths to audio
+- [ ] TEST-HUM-75: add_breaths() respects intensity parameter
+- [ ] TEST-HUM-76: humanize_pitch() function applies pitch variations
+- [ ] TEST-HUM-77: humanize_pitch() respects jitter_amount parameter
+
+---
+
+## Module: vocology/rhythm.py
+
+### RhythmClass Enum
+- [ ] TEST-RHY-01: RhythmClass.STRESS_TIMED has correct value "stress_timed"
+- [ ] TEST-RHY-02: RhythmClass.SYLLABLE_TIMED has correct value "syllable_timed"
+- [ ] TEST-RHY-03: RhythmClass.MORA_TIMED has correct value "mora_timed"
+
+### RhythmBand Enum
+- [ ] TEST-RHY-04: RhythmBand.DELTA covers phrase-level (0.5-2 Hz)
+- [ ] TEST-RHY-05: RhythmBand.THETA covers syllable-level (4-8 Hz)
+- [ ] TEST-RHY-06: RhythmBand.ALPHA covers phoneme-level (8-12 Hz)
+- [ ] TEST-RHY-07: RhythmBand.BETA covers articulation-level (12-30 Hz)
+
+### RhythmMetrics Dataclass
+- [ ] TEST-RHY-08: RhythmMetrics has percent_v field (vocalic percentage)
+- [ ] TEST-RHY-09: RhythmMetrics has npvi_v field (normalized PVI for vowels)
+- [ ] TEST-RHY-10: RhythmMetrics has rpvi_c field (raw PVI for consonants)
+- [ ] TEST-RHY-11: RhythmMetrics has delta_v field (vocalic variability)
+- [ ] TEST-RHY-12: RhythmMetrics has delta_c field (consonantal variability)
+- [ ] TEST-RHY-13: RhythmMetrics has speech_rate field (syllables/sec)
+- [ ] TEST-RHY-14: RhythmMetrics has varco_v field (variation coefficient)
+
+### RhythmZone Dataclass
+- [ ] TEST-RHY-15: RhythmZone has start_time field
+- [ ] TEST-RHY-16: RhythmZone has end_time field
+- [ ] TEST-RHY-17: RhythmZone has dominant_frequency field
+- [ ] TEST-RHY-18: RhythmZone has energy field
+- [ ] TEST-RHY-19: RhythmZone has band field (RhythmBand)
+
+### RZTAnalysis Dataclass
+- [ ] TEST-RHY-20: RZTAnalysis has zones list
+- [ ] TEST-RHY-21: RZTAnalysis has dominant_band field
+- [ ] TEST-RHY-22: RZTAnalysis has band_energies dict
+- [ ] TEST-RHY-23: RZTAnalysis has rhythm_regularity field
+
+### RhythmAnalyzer Class
+- [ ] TEST-RHY-24: RhythmAnalyzer initializes with default sample_rate
+- [ ] TEST-RHY-25: RhythmAnalyzer.analyze_metrics() returns RhythmMetrics
+- [ ] TEST-RHY-26: RhythmAnalyzer.analyze_metrics() computes valid percent_v (0-100)
+- [ ] TEST-RHY-27: RhythmAnalyzer.analyze_metrics() computes valid npvi_v
+- [ ] TEST-RHY-28: RhythmAnalyzer.analyze_metrics() computes valid speech_rate (>0)
+- [ ] TEST-RHY-29: RhythmAnalyzer.classify_rhythm() returns RhythmClass
+- [ ] TEST-RHY-30: RhythmAnalyzer.classify_rhythm() returns STRESS_TIMED for nPVI > 50
+- [ ] TEST-RHY-31: RhythmAnalyzer.classify_rhythm() returns SYLLABLE_TIMED for nPVI 35-50
+- [ ] TEST-RHY-32: RhythmAnalyzer.classify_rhythm() returns MORA_TIMED for nPVI < 35
+- [ ] TEST-RHY-33: RhythmAnalyzer.analyze_rzt() returns RZTAnalysis
+- [ ] TEST-RHY-34: RhythmAnalyzer.analyze_rzt() detects rhythm zones
+- [ ] TEST-RHY-35: RhythmAnalyzer.analyze_rzt() computes band energies
+- [ ] TEST-RHY-36: RhythmAnalyzer.analyze_band_energy() returns dict of band energies
+- [ ] TEST-RHY-37: RhythmAnalyzer identifies dominant rhythm band
+
+### RhythmModifier Class
+- [ ] TEST-RHY-38: RhythmModifier initializes with target rhythm class
+- [ ] TEST-RHY-39: RhythmModifier.modify() returns tuple (audio, sample_rate)
+- [ ] TEST-RHY-40: RhythmModifier.add_timing_variation() adds natural timing jitter
+- [ ] TEST-RHY-41: RhythmModifier can shift toward stress-timed rhythm
+- [ ] TEST-RHY-42: RhythmModifier can shift toward syllable-timed rhythm
+- [ ] TEST-RHY-43: RhythmModifier preserves audio length approximately
+- [ ] TEST-RHY-44: RhythmModifier output does not clip
+
+### Convenience Functions
+- [ ] TEST-RHY-45: analyze_rhythm() function works with file path input
+- [ ] TEST-RHY-46: analyze_rhythm() function works with numpy array input
+- [ ] TEST-RHY-47: analyze_rhythm() returns RhythmMetrics
+- [ ] TEST-RHY-48: analyze_rhythm_zones() returns RZTAnalysis
+- [ ] TEST-RHY-49: add_rhythm_variability() adds natural timing variations
+- [ ] TEST-RHY-50: add_rhythm_variability() respects amount parameter
+
+---
+
+## Module Exports for Humanize & Rhythm
+
+### vocology/__init__.py Humanize Exports
+- [ ] TEST-VOC-HUM-01: vocology module exports VoiceHumanizer
+- [ ] TEST-VOC-HUM-02: vocology module exports BreathInserter
+- [ ] TEST-VOC-HUM-03: vocology module exports BreathGenerator
+- [ ] TEST-VOC-HUM-04: vocology module exports PitchHumanizer
+- [ ] TEST-VOC-HUM-05: vocology module exports HumanizeConfig
+- [ ] TEST-VOC-HUM-06: vocology module exports BreathConfig
+- [ ] TEST-VOC-HUM-07: vocology module exports PitchHumanizeConfig
+- [ ] TEST-VOC-HUM-08: vocology module exports TimingHumanizeConfig
+- [ ] TEST-VOC-HUM-09: vocology module exports BreathType
+- [ ] TEST-VOC-HUM-10: vocology module exports EmotionalState
+- [ ] TEST-VOC-HUM-11: vocology module exports humanize_audio
+- [ ] TEST-VOC-HUM-12: vocology module exports add_breaths
+- [ ] TEST-VOC-HUM-13: vocology module exports humanize_pitch
+
+### vocology/__init__.py Rhythm Exports
+- [ ] TEST-VOC-RHY-01: vocology module exports RhythmAnalyzer
+- [ ] TEST-VOC-RHY-02: vocology module exports RhythmModifier
+- [ ] TEST-VOC-RHY-03: vocology module exports RhythmMetrics
+- [ ] TEST-VOC-RHY-04: vocology module exports RhythmZone
+- [ ] TEST-VOC-RHY-05: vocology module exports RZTAnalysis
+- [ ] TEST-VOC-RHY-06: vocology module exports RhythmClass
+- [ ] TEST-VOC-RHY-07: vocology module exports RhythmBand
+- [ ] TEST-VOC-RHY-08: vocology module exports analyze_rhythm
+- [ ] TEST-VOC-RHY-09: vocology module exports analyze_rhythm_zones
+- [ ] TEST-VOC-RHY-10: vocology module exports add_rhythm_variability
+
+---
+
+## Integration Tests: Humanization & Rhythm Pipeline
+
+### Humanization Integration
+- [ ] TEST-HUM-INT-01: Generate TTS → humanize → output sounds more natural
+- [ ] TEST-HUM-INT-02: Chain: breath insertion → pitch humanization → timing variation
+- [ ] TEST-HUM-INT-03: Emotional preset EXCITED produces faster, higher variation speech
+- [ ] TEST-HUM-INT-04: Emotional preset CALM produces slower, subtle speech
+- [ ] TEST-HUM-INT-05: Humanization with questions adds rising inflection
+
+### Rhythm Integration
+- [ ] TEST-RHY-INT-01: Analyze rhythm of English speech → classify as stress-timed
+- [ ] TEST-RHY-INT-02: Analyze rhythm of TTS output → compute valid metrics
+- [ ] TEST-RHY-INT-03: RZT analysis detects syllable-level rhythm (theta band)
+- [ ] TEST-RHY-INT-04: Modify rhythm to add natural timing variability
+- [ ] TEST-RHY-INT-05: Full pipeline: analyze → classify → modify → re-analyze
+
+### Combined Vocology Pipeline
+- [ ] TEST-VOC-FULL-01: Full chain: TTS → voice quality → formant → phonation → humanize
+- [ ] TEST-VOC-FULL-02: Full chain: TTS → rhythm analysis → humanize → rhythm re-analysis
+- [ ] TEST-VOC-FULL-03: Voice aging: formant shift → creaky phonation → tired preset → slow rhythm
+- [ ] TEST-VOC-FULL-04: Intimate voice: breathy phonation → intimate preset → slow rhythm
+- [ ] TEST-VOC-FULL-05: Energetic voice: higher formants → excited preset → fast rhythm
+
+---
+
+## PHASE 10 TEST SUMMARY
+
+| Module | Total Tests | Priority |
+|--------|-------------|----------|
+| vocology/humanize.py | 77 | HIGH |
+| vocology/rhythm.py | 50 | HIGH |
+| Module Exports (humanize) | 13 | MEDIUM |
+| Module Exports (rhythm) | 10 | MEDIUM |
+| Integration Tests | 15 | HIGH |
+| **PHASE 10 TOTAL** | **165** | - |
+
+---
+
+## UPDATED COMBINED TEST COUNTS (v1.3.0)
+
+| Category | Tests |
+|----------|-------|
+| Original Test Plan (v0.1.0) | 254 |
+| Additional Tests (Audit) | 89 |
+| Phase 1: Chatterbox (v0.2.0) | 115 |
+| Phases 2-7 (Future) | 57 |
+| Normalizer (v1.0.1) | 101 |
+| Web Server (v1.0.1) | 70 |
+| Phase 8: F5-TTS & Multilingual (v0.3.0) | 190 |
+| Phase 9: Vocology Module (v1.2.0) | 154 |
+| **Phase 10: Humanization & Rhythm (v1.3.0)** | **165** |
+| **TOTAL TESTS DEFINED** | **1195** |
+
+---
+
+## TEST EXECUTION PRIORITY FOR PHASE 10
+
+### Session 22 (Critical - Humanization Core)
+**Target: 45 tests**
+
+Execute first:
+1. TEST-HUM-01 to TEST-HUM-13 (Enums)
+2. TEST-HUM-14 to TEST-HUM-38 (Config dataclasses)
+
+### Session 23 (High Priority - Humanization Classes)
+**Target: 39 tests**
+
+Execute:
+1. TEST-HUM-39 to TEST-HUM-61 (BreathGenerator, BreathInserter, PitchHumanizer)
+2. TEST-HUM-62 to TEST-HUM-77 (VoiceHumanizer, convenience functions)
+
+### Session 24 (High Priority - Rhythm Analysis)
+**Target: 50 tests**
+
+Execute:
+1. TEST-RHY-01 to TEST-RHY-23 (Enums, dataclasses)
+2. TEST-RHY-24 to TEST-RHY-50 (RhythmAnalyzer, RhythmModifier, convenience functions)
+
+### Session 25 (Final - Exports & Integration)
+**Target: 38 tests**
+
+Execute:
+1. TEST-VOC-HUM-01 to TEST-VOC-HUM-13 (humanize exports)
+2. TEST-VOC-RHY-01 to TEST-VOC-RHY-10 (rhythm exports)
+3. TEST-HUM-INT-01 to TEST-HUM-INT-05 (humanization integration)
+4. TEST-RHY-INT-01 to TEST-RHY-INT-05 (rhythm integration)
+5. TEST-VOC-FULL-01 to TEST-VOC-FULL-05 (combined pipeline)
+
+---
+
+## NOTES FOR IMPLEMENTING PHASE 10 TESTS
+
+### Test File Location
+- Humanization tests: `tests/test_vocology_humanize.py` (CREATE NEW)
+- Rhythm tests: `tests/test_vocology_rhythm.py` (CREATE NEW)
+
+### Test Fixtures
+```python
+import pytest
+import numpy as np
+
+@pytest.fixture
+def tts_audio(tmp_path):
+    """Generate TTS audio for testing humanization."""
+    from voice_soundboard import VoiceEngine
+    engine = VoiceEngine()
+    result = engine.speak(
+        "Hello, this is a test sentence for humanization.",
+        save_path=tmp_path / "test.wav"
+    )
+    return result.audio_path
+
+@pytest.fixture
+def sample_speech():
+    """Generate synthetic speech-like audio."""
+    sr = 24000
+    duration = 2.0
+    t = np.linspace(0, duration, int(sr * duration))
+
+    # Simulate speech with varying amplitude (syllables)
+    envelope = np.abs(np.sin(2 * np.pi * 5 * t))  # ~5 Hz syllable rate
+    audio = envelope * np.sin(2 * np.pi * 200 * t)  # 200 Hz fundamental
+
+    return audio.astype(np.float32), sr
+```
+
+### Key Assertions
+- Breath insertion should increase audio length
+- Pitch humanization should not change audio length significantly
+- Timing variation should not exceed specified bounds
+- RhythmMetrics values should be in expected ranges:
+  - nPVI: 0-100 (typically 30-70)
+  - percent_v: 30-60% for most languages
+  - speech_rate: 3-8 syllables/second
+- RZT band energies should sum to ~1.0 (normalized)
+- Emotional presets should produce measurably different output
 ```
