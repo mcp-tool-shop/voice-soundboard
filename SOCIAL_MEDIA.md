@@ -17,7 +17,7 @@ NEW:
 
 engine.speak("Bonjour!", language="fr")
 
-🔗 github.com/mikeyfrilot/voice-soundboard
+🔗 github.com/mcp-tool-shop/voice-soundboard
 ```
 
 ### Twitter/X - Thread Starter
@@ -87,7 +87,7 @@ Backward compatible: Users on older hardware can stay on v1.0.0.
 
 pip install voice-soundboard[all]
 
-GitHub: github.com/mikeyfrilot/voice-soundboard
+GitHub: github.com/mcp-tool-shop/voice-soundboard
 
 #AI #TTS #VoiceSynthesis #Multilingual #OpenSource #F5TTS
 ```
@@ -115,7 +115,7 @@ engine.speak("Guten Tag!", language="de")
 Note: F5-TTS needs Python 3.10-3.11, Chatterbox needs 3.11.
 Users on 3.12+ can stick with v1.0.0.
 
-GitHub: github.com/mikeyfrilot/voice-soundboard
+GitHub: github.com/mcp-tool-shop/voice-soundboard
 ```
 
 ### Hacker News - Show HN
@@ -133,7 +133,7 @@ Released v1.1 of my open-source voice synthesis library with two major additions
 Backward compatible - v1.0.0 still available for older hardware or Python 3.12+ users.
 
 pip install voice-soundboard[all]
-https://github.com/mikeyfrilot/voice-soundboard
+https://github.com/mcp-tool-shop/voice-soundboard
 ```
 
 ---
@@ -155,7 +155,7 @@ Give AI agents expressive voices with:
 
 pip install voice-soundboard
 
-🔗 github.com/yourusername/voice-soundboard
+🔗 github.com/mcp-tool-shop/voice-soundboard
 ```
 
 ### Thread Starter
@@ -237,7 +237,7 @@ Your AI assistant can now speak naturally.
 pip install voice-soundboard[all]
 
 Star us on GitHub ⭐
-github.com/yourusername/voice-soundboard
+github.com/mcp-tool-shop/voice-soundboard
 ```
 
 ---
@@ -268,7 +268,7 @@ Use cases:
 Get started:
 pip install voice-soundboard
 
-GitHub: github.com/yourusername/voice-soundboard
+GitHub: github.com/mcp-tool-shop/voice-soundboard
 
 #AI #TextToSpeech #VoiceSynthesis #OpenSource #MCP #ArtificialIntelligence
 ```
@@ -309,7 +309,7 @@ play_audio(result.audio_path)
 ```
 
 **Links:**
-- GitHub: github.com/yourusername/voice-soundboard
+- GitHub: github.com/mcp-tool-shop/voice-soundboard
 - PyPI: pip install voice-soundboard
 - Docs: In the README
 
@@ -380,7 +380,7 @@ Built with:
 Security was a priority - XXE protection, path traversal prevention, rate limiting, and consent tracking for voice cloning.
 
 pip install voice-soundboard
-https://github.com/yourusername/voice-soundboard
+https://github.com/mcp-tool-shop/voice-soundboard
 
 Would love feedback on the API design and what features you'd find most useful.
 ```
@@ -446,7 +446,7 @@ Complete voice synthesis platform for AI agents:
 engine.speak("That's hilarious! [laugh]", style="warmly")
 ```
 
-🔗 GitHub: github.com/yourusername/voice-soundboard
+🔗 GitHub: github.com/mcp-tool-shop/voice-soundboard
 📦 Install: `pip install voice-soundboard[all]`
 ```
 
@@ -473,7 +473,7 @@ Other features:
 
 Demo video coming soon!
 
-GitHub: github.com/yourusername/voice-soundboard
+GitHub: github.com/mcp-tool-shop/voice-soundboard
 ```
 
 ---

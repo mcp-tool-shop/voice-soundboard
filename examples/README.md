@@ -37,7 +37,7 @@ python examples/01_basic_speech.py
 ## Interactive Demos
 
 ### Google Colab Notebook
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/yourusername/voice-soundboard/blob/main/examples/voice_soundboard_demo.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mcp-tool-shop/voice-soundboard/blob/main/examples/voice_soundboard_demo.ipynb)
 
 Run the full demo in your browser without any local setup.
 

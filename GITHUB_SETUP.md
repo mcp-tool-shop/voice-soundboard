@@ -142,7 +142,7 @@ Already included in README.md:
 ```markdown
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Downloads](https://pepy.tech/badge/voice-soundboard)](https://pepy.tech/project/voice-soundboard)
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/voice-soundboard?style=social)](https://github.com/yourusername/voice-soundboard)
+[![GitHub stars](https://img.shields.io/github/stars/mcp-tool-shop/voice-soundboard?style=social)](https://github.com/mcp-tool-shop/voice-soundboard)
 ```
 
 ---
@@ -207,7 +207,7 @@ voice-soundboard/
 If you want to accept sponsorships, update `.github/FUNDING.yml`:
 
 ```yaml
-github: yourusername
+github: mcp-tool-shop
 patreon: yourpatreon
 open_collective: voice-soundboard
 ko_fi: yourkofi

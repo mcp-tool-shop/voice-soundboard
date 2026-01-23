@@ -162,7 +162,7 @@ cb.speak("Hallo Welt!", language="de")
 
 ## Links
 
-- **GitHub**: github.com/mikeyfrilot/voice-soundboard
+- **GitHub**: github.com/mcp-tool-shop/voice-soundboard
 - **PyPI**: pypi.org/project/voice-soundboard
 - **Changelog**: CHANGELOG.md
 - **Roadmap**: ROADMAP.md
@@ -350,7 +350,7 @@ Full security audit available in SECURITY_AUDIT.md.
 
 Voice Soundboard is released under the MIT License. We welcome contributions:
 
-- **GitHub**: github.com/yourusername/voice-soundboard
+- **GitHub**: github.com/mcp-tool-shop/voice-soundboard
 - **PyPI**: pypi.org/project/voice-soundboard
 - **Documentation**: Full API docs, examples, and guides
 

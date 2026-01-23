@@ -41,7 +41,7 @@ engine.speak("Hello! How can I help you today?", style="warmly and cheerfully")
 pip install voice-soundboard
 
 # From source
-git clone https://github.com/yourusername/voice-soundboard.git
+git clone https://github.com/mcp-tool-shop/voice-soundboard.git
 cd voice-soundboard
 pip install -e .
 

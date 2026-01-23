@@ -262,7 +262,7 @@ play_audio(result.audio_path)
 
 ### Visual
 - Links:
-  - github.com/yourusername/voice-soundboard
+  - github.com/mcp-tool-shop/voice-soundboard
   - pip install voice-soundboard
 
 ---
