@@ -37,7 +37,7 @@ class TestConfig:
     def test_kokoro_voices_structure(self):
         """TEST-C05: KOKORO_VOICES dict has expected structure."""
         from voice_soundboard.config import KOKORO_VOICES
-        assert len(KOKORO_VOICES) == 30
+        assert len(KOKORO_VOICES) >= 50  # 50 voices across 9 languages
         for voice_id, info in KOKORO_VOICES.items():
             assert "name" in info
             assert "gender" in info
@@ -424,7 +424,7 @@ class TestPackage:
         """TEST-PKG02: Package has __version__."""
         import voice_soundboard
         assert hasattr(voice_soundboard, "__version__")
-        assert voice_soundboard.__version__ == "0.1.0"
+        assert voice_soundboard.__version__ == "1.0.0"
 
     def test_has_websocket_flag(self):
         """TEST-PKG03: _HAS_WEBSOCKET flag exists."""

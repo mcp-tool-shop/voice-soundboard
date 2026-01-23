@@ -21,6 +21,7 @@ from voice_soundboard.security import (
     sanitize_filename, safe_join_path, validate_text_input,
     validate_speed, secure_hash, safe_error_message
 )
+from voice_soundboard.normalizer import normalize_text as normalize_text_func
 
 
 @dataclass
@@ -104,6 +105,7 @@ class VoiceEngine:
         speed: Optional[float] = None,
         style: Optional[str] = None,
         save_as: Optional[str] = None,
+        normalize: bool = True,
     ) -> SpeechResult:
         """
         Generate speech from text.
@@ -115,6 +117,9 @@ class VoiceEngine:
             speed: Speech speed multiplier (0.5-2.0, default 1.0)
             style: Natural language style hint (e.g., "warmly", "excitedly")
             save_as: Optional filename (auto-generated if not provided)
+            normalize: Apply text normalization for TTS edge cases (default True).
+                      Expands currency ($100 -> one hundred dollars),
+                      abbreviations (Dr. -> Doctor), emojis, math symbols, etc.
 
         Returns:
             SpeechResult with audio path and metadata
@@ -122,8 +127,13 @@ class VoiceEngine:
         Example:
             result = engine.speak("Hello!", voice="af_bella", speed=1.1)
             result = engine.speak("Hello!", style="warmly and cheerfully")
+            result = engine.speak("The price is $50", normalize=True)  # Speaks "fifty dollars"
         """
         self._ensure_model_loaded()
+
+        # Apply text normalization for better TTS pronunciation
+        if normalize:
+            text = normalize_text_func(text)
 
         # Apply natural language style interpretation
         if style:
@@ -190,6 +200,7 @@ class VoiceEngine:
         text: str,
         voice: Optional[str] = None,
         speed: float = 1.0,
+        normalize: bool = True,
     ) -> Tuple[np.ndarray, int]:
         """
         Generate speech and return raw audio samples.
@@ -198,11 +209,16 @@ class VoiceEngine:
             text: The text to speak
             voice: Kokoro voice ID
             speed: Speech speed multiplier
+            normalize: Apply text normalization for TTS edge cases (default True)
 
         Returns:
             Tuple of (samples array, sample_rate)
         """
         self._ensure_model_loaded()
+
+        # Apply text normalization for better TTS pronunciation
+        if normalize:
+            text = normalize_text_func(text)
 
         voice = voice or self.config.default_voice
         speed = max(0.5, min(2.0, speed))
@@ -232,7 +248,12 @@ class VoiceEngine:
         return {"name": voice, "gender": "unknown", "accent": "unknown", "style": "unknown"}
 
 
-def quick_speak(text: str, voice: str = "af_bella", speed: float = 1.0) -> Path:
+def quick_speak(
+    text: str,
+    voice: str = "af_bella",
+    speed: float = 1.0,
+    normalize: bool = True
+) -> Path:
     """
     Quick one-liner to generate speech.
 
@@ -240,12 +261,13 @@ def quick_speak(text: str, voice: str = "af_bella", speed: float = 1.0) -> Path:
         text: Text to speak
         voice: Voice ID
         speed: Speed multiplier
+        normalize: Apply text normalization (default True)
 
     Returns:
         Path to generated audio file
     """
     engine = VoiceEngine()
-    result = engine.speak(text, voice=voice, speed=speed)
+    result = engine.speak(text, voice=voice, speed=speed, normalize=normalize)
     return result.audio_path
 
 

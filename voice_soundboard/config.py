@@ -85,9 +85,51 @@ KOKORO_VOICES = {
     "bm_george": {"name": "George", "gender": "male", "accent": "british", "style": "authoritative"},
     "bm_lewis": {"name": "Lewis", "gender": "male", "accent": "british", "style": "friendly"},
 
-    # Other languages
+    # European English Female
+    "ef_dora": {"name": "Dora", "gender": "female", "accent": "european", "style": "warm"},
+
+    # European English Male
+    "em_alex": {"name": "Alex", "gender": "male", "accent": "european", "style": "neutral"},
+    "em_santa": {"name": "Santa", "gender": "male", "accent": "european", "style": "jolly"},
+
+    # French Female
+    "ff_siwis": {"name": "Siwis", "gender": "female", "accent": "french", "style": "elegant"},
+
+    # Hindi Female
+    "hf_alpha": {"name": "Alpha", "gender": "female", "accent": "hindi", "style": "neutral"},
+    "hf_beta": {"name": "Beta", "gender": "female", "accent": "hindi", "style": "warm"},
+
+    # Hindi Male
+    "hm_omega": {"name": "Omega", "gender": "male", "accent": "hindi", "style": "deep"},
+    "hm_psi": {"name": "Psi", "gender": "male", "accent": "hindi", "style": "clear"},
+
+    # Italian Female
+    "if_sara": {"name": "Sara", "gender": "female", "accent": "italian", "style": "expressive"},
+
+    # Italian Male
+    "im_nicola": {"name": "Nicola", "gender": "male", "accent": "italian", "style": "warm"},
+
+    # Japanese Female
     "jf_alpha": {"name": "Alpha", "gender": "female", "accent": "japanese", "style": "neutral"},
+    "jf_gongitsune": {"name": "Gongitsune", "gender": "female", "accent": "japanese", "style": "storytelling"},
+    "jf_nezumi": {"name": "Nezumi", "gender": "female", "accent": "japanese", "style": "soft"},
+    "jf_tebukuro": {"name": "Tebukuro", "gender": "female", "accent": "japanese", "style": "gentle"},
+
+    # Japanese Male
+    "jm_kumo": {"name": "Kumo", "gender": "male", "accent": "japanese", "style": "calm"},
+
+    # Portuguese Female
+    "pf_dora": {"name": "Dora", "gender": "female", "accent": "portuguese", "style": "warm"},
+
+    # Portuguese Male
+    "pm_alex": {"name": "Alex", "gender": "male", "accent": "portuguese", "style": "neutral"},
+    "pm_santa": {"name": "Santa", "gender": "male", "accent": "portuguese", "style": "jolly"},
+
+    # Mandarin Chinese Female
     "zf_xiaobei": {"name": "Xiaobei", "gender": "female", "accent": "mandarin", "style": "clear"},
+    "zf_xiaoni": {"name": "Xiaoni", "gender": "female", "accent": "mandarin", "style": "gentle"},
+    "zf_xiaoxiao": {"name": "Xiaoxiao", "gender": "female", "accent": "mandarin", "style": "bright"},
+    "zf_xiaoyi": {"name": "Xiaoyi", "gender": "female", "accent": "mandarin", "style": "professional"},
 }
 
 # Voice personality presets (maps to Kokoro voices + settings)

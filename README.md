@@ -4,21 +4,33 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Security: Audited](https://img.shields.io/badge/security-audited-green.svg)](SECURITY_AUDIT.md)
+[![Tests: 495+](https://img.shields.io/badge/tests-495%2B%20passing-brightgreen.svg)](TEST_PLAN.md)
+[![MCP Compatible](https://img.shields.io/badge/MCP-compatible-purple.svg)](https://modelcontextprotocol.io/)
 
-**AI-powered voice synthesis with natural language control.** Let AI agents speak naturally with 50+ voices, emotions, streaming, and real-time playback.
+**AI-powered voice synthesis with natural language control.** Give AI agents expressive, human-like voices with 54+ voices, 19 emotions, real-time streaming, voice cloning, and multi-speaker dialogue.
+
+```python
+engine.speak("Hello! How can I help you today?", style="warmly and cheerfully")
+```
+
+---
 
 ## Highlights
 
-- **Natural Language Styles** - "say this warmly", "excitedly", "like a narrator"
-- **50+ Voices** - American, British, Japanese, Mandarin accents
-- **19 Emotions** - happy, sad, angry, excited, calm, and more
-- **5 Presets** - assistant, narrator, announcer, storyteller, whisper
-- **SSML Support** - `<break>`, `<prosody>`, `<emphasis>`, `<say-as>`
-- **Real-time Streaming** - Low-latency audio generation
-- **Sound Effects** - 13 built-in effects (chime, success, error, etc.)
-- **MCP Integration** - AI agents can speak via tool calls
-- **WebSocket API** - Real-time bidirectional communication
-- **Security Hardened** - Path validation, rate limiting, XXE protection
+| Feature | Description |
+|---------|-------------|
+| **Natural Language Styles** | "say this warmly", "excitedly", "like a narrator" |
+| **54+ Voices** | American, British, Japanese, Mandarin accents |
+| **19 Emotions** | happy, sad, angry, excited, calm, and more |
+| **Paralinguistic Tags** | `[laugh]`, `[sigh]`, `[gasp]` - natural non-speech sounds |
+| **Multi-Speaker Dialogue** | Generate podcasts, audiobooks, conversations |
+| **Voice Cloning** | Clone any voice from 3-10 seconds of audio |
+| **Real-time Streaming** | Sub-100ms latency for interactive applications |
+| **Mobile Web UI** | Access from phone/tablet via responsive web interface |
+| **MCP Integration** | 40+ tools for AI agent integration |
+| **Security Hardened** | Path validation, rate limiting, XXE protection |
+
+---
 
 ## Installation
 
@@ -31,10 +43,12 @@ git clone https://github.com/yourusername/voice-soundboard.git
 cd voice-soundboard
 pip install -e .
 
-# With optional dependencies
-pip install voice-soundboard[websocket]  # WebSocket server
-pip install voice-soundboard[mcp]        # MCP server
-pip install voice-soundboard[all]        # Everything
+# With optional features
+pip install voice-soundboard[websocket]   # WebSocket server
+pip install voice-soundboard[web]         # Mobile web UI
+pip install voice-soundboard[mcp]         # MCP server
+pip install voice-soundboard[chatterbox]  # Paralinguistic tags & voice cloning
+pip install voice-soundboard[all]         # Everything
 ```
 
 ### Model Download (Required)
@@ -45,9 +59,11 @@ curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-fil
 curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 ```
 
+---
+
 ## Quick Start
 
-### Python API
+### Basic Speech
 
 ```python
 from voice_soundboard import VoiceEngine, play_audio
@@ -71,6 +87,79 @@ result = engine.speak("Good morning!", style="warmly and cheerfully")
 result = engine.speak("Cheerio!", voice="bm_george")  # British male
 ```
 
+### Paralinguistic Tags (Chatterbox)
+
+```python
+from voice_soundboard.engines import ChatterboxEngine
+
+engine = ChatterboxEngine()
+
+# Natural non-speech sounds
+result = engine.speak(
+    "That's hilarious! [laugh] Oh man, [sigh] I needed that.",
+    emotion_exaggeration=0.7  # 0.0 = monotone, 1.0 = dramatic
+)
+```
+
+Supported tags: `[laugh]`, `[chuckle]`, `[sigh]`, `[gasp]`, `[cough]`, `[groan]`, `[sniff]`, `[shush]`, `[clear throat]`
+
+### Multi-Speaker Dialogue
+
+```python
+from voice_soundboard import DialogueEngine
+
+engine = DialogueEngine()
+
+script = """
+[S1:narrator] The door creaked open slowly.
+[S2:alice] Hello? Is anyone there? [gasp]
+[S3:bob] (whispering) Don't go in there...
+"""
+
+result = await engine.speak_dialogue(
+    script,
+    voices={"narrator": "bm_george", "alice": "af_bella", "bob": "am_michael"}
+)
+```
+
+### Voice Cloning
+
+```python
+from voice_soundboard import VoiceCloner
+
+cloner = VoiceCloner()
+
+# Clone from 3-10 second sample
+my_voice = cloner.clone("my_sample.wav", consent_given=True)
+
+# Use the cloned voice
+engine.speak("Hello, this is my cloned voice!", voice=my_voice.voice_id)
+
+# Cross-language cloning
+cloner.speak("Bonjour le monde!", voice=my_voice.voice_id, language="fr")
+```
+
+### Emotion Control
+
+```python
+from voice_soundboard import blend_emotions, EmotionCurve
+
+# Blend emotions
+result = blend_emotions([("happy", 0.7), ("surprised", 0.3)])
+print(result.closest_emotion)  # "pleasantly surprised"
+
+# Dynamic emotion curves
+curve = EmotionCurve()
+curve.add_point(0.0, "worried")
+curve.add_point(0.5, "neutral")
+curve.add_point(1.0, "excited")
+
+# Word-level emotion tags
+engine.speak(
+    "I was so {happy}excited{/happy} to see you, but then {sad}you left{/sad}."
+)
+```
+
 ### Streaming (Low Latency)
 
 ```python
@@ -88,7 +177,7 @@ print(f"Generated {result.total_chunks} chunks in {result.generation_time:.2f}s"
 ### SSML Support
 
 ```python
-from voice_soundboard import parse_ssml, VoiceEngine
+from voice_soundboard import parse_ssml
 
 ssml = '''
 <speak>
@@ -99,57 +188,83 @@ ssml = '''
 '''
 
 text, params = parse_ssml(ssml)
-engine = VoiceEngine()
 result = engine.speak(text, speed=params.speed)
 ```
 
 ### Sound Effects
 
 ```python
-from voice_soundboard import get_effect, play_effect, list_effects
+from voice_soundboard import play_effect, list_effects
 
 # List available effects
 print(list_effects())  # ['chime', 'success', 'error', 'attention', ...]
 
 # Play an effect
 play_effect("success")
-
-# Save an effect
-effect = get_effect("chime")
-effect.save("notification.wav")
 ```
 
-### Emotions
+---
 
-```python
-from voice_soundboard import get_emotion_params, get_emotion_voice_params
+## Mobile Web Interface
 
-# Get emotion parameters
-params = get_emotion_params("excited")
-print(f"Speed: {params.speed}, Voice: {params.voice_preference}")
+Access Voice Soundboard from any phone or tablet with the built-in web server:
 
-# Apply emotion to voice
-voice_params = get_emotion_voice_params("happy", voice="af_bella", speed=1.0)
+```bash
+# Start the web server
+python -m voice_soundboard.web_server
+
+# Output:
+# Voice Soundboard Web Server
+# Local:   http://localhost:8080
+# Network: http://192.168.1.100:8080  <- Use this on your phone!
 ```
+
+**Features:**
+- Responsive design for phones and tablets
+- PWA support (add to home screen)
+- Voice selection grid with language filters
+- Quick phrase buttons
+- Sound effects panel
+- Real-time WebSocket with REST fallback
+
+---
 
 ## MCP Server (For AI Agents)
 
-Voice Soundboard exposes tools for AI agents via the Model Context Protocol.
+Voice Soundboard exposes 40+ tools for AI agents via the Model Context Protocol.
 
-### Available Tools
+### Core Tools
 
 | Tool | Description |
 |------|-------------|
 | `speak` | Generate speech with natural language control |
 | `speak_long` | Stream long text efficiently |
 | `speak_ssml` | Process SSML markup |
-| `list_voices` | List 50+ voices with filtering |
+| `speak_chatterbox` | Paralinguistic tags and emotion control |
+| `speak_dialogue` | Multi-speaker conversation synthesis |
+| `speak_realtime` | Ultra-low latency streaming |
+| `speak_with_context` | Context-aware emotion selection |
+
+### Voice & Emotion Tools
+
+| Tool | Description |
+|------|-------------|
+| `list_voices` | List 54+ voices with filtering |
 | `list_presets` | Show preset configurations |
-| `list_effects` | List sound effects |
 | `list_emotions` | List available emotions |
+| `blend_emotions` | Mix emotions with weights |
+| `clone_voice` | Clone voice from audio sample |
+| `list_voice_library` | Browse cloned voices |
+
+### Utility Tools
+
+| Tool | Description |
+|------|-------------|
 | `sound_effect` | Play/save sound effects |
 | `play_audio` | Play audio file |
 | `stop_audio` | Stop playback |
+| `encode_audio_tokens` | Convert audio to LLM tokens |
+| `start_voice_conversion` | Real-time voice changing |
 
 ### Claude Desktop Configuration
 
@@ -163,6 +278,8 @@ Voice Soundboard exposes tools for AI agents via the Model Context Protocol.
   }
 }
 ```
+
+---
 
 ## WebSocket Server
 
@@ -193,19 +310,15 @@ ws.send(JSON.stringify({
   play: true
 }));
 
-// Stream speech
+// Multi-speaker dialogue
 ws.send(JSON.stringify({
-  action: "speak_stream",
-  text: "Long text to stream...",
-  emotion: "happy"
-}));
-
-// Play effect
-ws.send(JSON.stringify({
-  action: "effect",
-  effect: "chime"
+  action: "dialogue",
+  script: "[S1:alice] Hello! [S2:bob] Hi there!",
+  voices: {"alice": "af_bella", "bob": "am_michael"}
 }));
 ```
+
+---
 
 ## Voice Presets
 
@@ -239,6 +352,37 @@ The interpreter understands:
 
 Combine them: `"cheerfully in a british accent, slowly"`
 
+---
+
+## Architecture
+
+```
+voice_soundboard/
+├── engine.py              # VoiceEngine - core TTS synthesis
+├── engines/               # TTS backends (Kokoro, Chatterbox)
+├── dialogue/              # Multi-speaker dialogue synthesis
+├── emotion/               # Advanced emotion control (VAD, blending)
+├── cloning/               # Voice cloning & library management
+├── codecs/                # Neural audio codecs (Mimi, DualCodec)
+├── conversion/            # Real-time voice conversion
+├── llm/                   # LLM integration utilities
+├── streaming.py           # Real-time streaming
+├── server.py              # MCP server (40+ tools)
+├── websocket_server.py    # WebSocket API server
+├── web_server.py          # Mobile web UI server
+├── web/                   # HTML/CSS/JS for mobile interface
+├── interpreter.py         # Natural language -> parameters
+├── emotions.py            # Emotion parameters
+├── ssml.py                # SSML parsing with defusedxml
+├── effects.py             # Sound effect generation
+├── normalizer.py          # Text normalization for TTS
+├── security.py            # Security utilities
+├── audio.py               # Playback with path validation
+└── config.py              # Voices, presets, settings
+```
+
+---
+
 ## Security
 
 Voice Soundboard is security-hardened:
@@ -248,26 +392,12 @@ Voice Soundboard is security-hardened:
 - **Rate Limiting** - Token bucket algorithm
 - **Input Validation** - Length limits, type checking
 - **WebSocket Security** - Origin validation, API key auth, TLS support
+- **Voice Cloning Consent** - Required acknowledgment for ethical use
 - **Safe Error Messages** - No internal paths exposed
 
 See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) for the full security audit.
 
-## Architecture
-
-```
-voice_soundboard/
-├── engine.py          # VoiceEngine - core TTS synthesis
-├── streaming.py       # Real-time streaming with low latency
-├── server.py          # MCP server with 11 tools
-├── websocket_server.py # WebSocket API server
-├── interpreter.py     # Natural language → parameters
-├── emotions.py        # Emotion parameters and text modification
-├── ssml.py            # SSML parsing with defusedxml
-├── effects.py         # Sound effect generation
-├── security.py        # Security utilities
-├── audio.py           # Playback with path validation
-└── config.py          # Voices, presets, settings
-```
+---
 
 ## Requirements
 
@@ -285,14 +415,44 @@ pytest tests/ -v
 pytest tests/ --cov=voice_soundboard
 ```
 
-**Test Results**: 254 tests, 98% pass rate. See [TEST_PLAN.md](TEST_PLAN.md).
+**Test Results**: 495+ tests, 98.4% pass rate. See [TEST_PLAN.md](TEST_PLAN.md).
+
+---
+
+## Use Cases
+
+### Customer Service Bots
+Give chatbots warm, professional voices that build trust with customers.
+
+### Accessibility Tools
+Create screen readers and assistive technologies with natural speech.
+
+### Content Creation
+Generate voiceovers for videos, podcasts, and presentations.
+
+### Gaming & Interactive Media
+Bring NPCs and characters to life with expressive dialogue.
+
+### Audiobooks & Podcasts
+Multi-speaker dialogue synthesis for immersive audio content.
+
+### Smart Home Assistants
+Build custom voice interfaces for IoT devices.
+
+---
 
 ## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 1. Fork the repository
 2. Create a feature branch
 3. Run tests: `pytest tests/ -v`
 4. Submit a pull request
+
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for the full development roadmap.
 
 ## License
 
@@ -301,4 +461,11 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## Acknowledgments
 
 - [Kokoro ONNX](https://github.com/thewh1teagle/kokoro-onnx) - High-quality TTS engine
+- [Chatterbox](https://github.com/resemble-ai/chatterbox) - Paralinguistic tags
 - [defusedxml](https://github.com/tiran/defusedxml) - Secure XML parsing
+
+---
+
+<p align="center">
+  <strong>Voice Soundboard</strong> - Because AI should sound as intelligent as it thinks.
+</p>

@@ -1,135 +1,238 @@
-# Voice Soundboard: AI-Powered Speech Synthesis for the Next Generation of AI Agents
+# Voice Soundboard 1.0: The Complete Voice Synthesis Platform for AI Agents
 
 **FOR IMMEDIATE RELEASE**
 
-*Natural language voice control meets enterprise-grade security*
+*From simple TTS to comprehensive voice synthesis - Voice Soundboard reaches feature-complete 1.0 release*
 
 ---
 
-## Giving AI Agents a Voice
+## Giving AI Agents a Voice - Now Feature Complete
 
-**January 2026** - Today we announce the release of **Voice Soundboard**, an open-source Python library that enables AI agents to speak naturally through simple, intuitive commands.
-
-In an era where AI assistants are becoming ubiquitous, Voice Soundboard bridges the gap between text-based AI and natural human interaction. With a single line of code, developers can give their AI agents expressive, human-like voices.
+**January 2026** - Today marks the release of **Voice Soundboard 1.0**, transforming what began as a simple text-to-speech tool into a comprehensive voice synthesis platform. With this release, AI agents can now speak naturally with human-like expressiveness, complete with laughter, sighs, and emotional nuance.
 
 ```python
-engine.speak("Hello! How can I help you today?", style="warmly and cheerfully")
+engine.speak("That's hilarious! [laugh] I really needed that.", style="warmly")
 ```
 
 ---
 
-## Key Features
+## What's New in 1.0
 
-### Natural Language Control
-Forget complex parameter tuning. Voice Soundboard understands natural language:
-- *"Say this excitedly"*
-- *"Like a narrator, slowly"*
-- *"With a British accent"*
+### Paralinguistic Tags
+Natural non-speech sounds that make AI voices feel human:
+- `[laugh]` - Full laughter in the speaker's voice
+- `[sigh]` - Emotional exhales
+- `[gasp]`, `[cough]`, `[chuckle]` - Natural reactions
 
-The built-in interpreter translates these hints into precise synthesis parameters automatically.
+### Multi-Speaker Dialogue
+Generate podcasts, audiobooks, and conversations with multiple distinct voices:
 
-### 50+ Voices, 19 Emotions
-Choose from a diverse library of voices spanning American, British, Japanese, and Mandarin accents. Apply emotions like happy, sad, excited, or calm to make speech feel authentic.
+```python
+script = """
+[S1:narrator] The detective entered the room.
+[S2:detective] (firmly) Where were you last night?
+[S3:suspect] (nervously) I... I was at home.
+"""
+engine.speak_dialogue(script)
+```
 
-### Real-Time Streaming
-Ultra-low latency streaming generates audio as text is processed. Perfect for interactive applications where responsiveness matters.
+### Voice Cloning
+Clone any voice from just 3-10 seconds of audio:
+- Cross-language synthesis (clone in English, speak in French)
+- Emotion-timbre separation (apply different emotions to cloned voices)
+- Built-in consent tracking for ethical use
 
-### Enterprise Security
-Built with security-first principles:
-- XXE attack protection via defusedxml
-- Path traversal prevention
-- Rate limiting
-- WebSocket authentication and TLS
-- Comprehensive input validation
+### Advanced Emotion Control
+Beyond simple emotion labels:
+- **Word-level tags**: `{happy}text{/happy}` for mid-sentence emotion changes
+- **VAD Model**: 50+ emotions mapped to Valence-Arousal-Dominance
+- **Emotion Blending**: Mix 70% happy + 30% surprised
+- **Dynamic Curves**: Emotions that evolve over the utterance
 
-All critical and high-severity vulnerabilities have been addressed, with a detailed security audit available in the repository.
-
-### MCP Integration
-Native support for the Model Context Protocol (MCP) means seamless integration with Claude, GPT, and other AI systems. Agents can speak through simple tool calls without custom integration work.
+### Mobile Access
+Use Voice Soundboard from any phone or tablet:
+```bash
+python -m voice_soundboard.web_server
+# Access from your phone at http://192.168.1.x:8080
+```
 
 ---
 
-## Technical Highlights
+## By the Numbers
 
 | Metric | Value |
 |--------|-------|
-| TTS Engine | Kokoro ONNX (82M params) |
-| Generation Speed | 2-3x realtime |
-| Voices | 50+ |
+| Voices | 54+ |
 | Emotions | 19 |
-| Test Coverage | 254 tests, 98% pass rate |
-| Security | All CRITICAL/HIGH vulns fixed |
+| MCP Tools | 40+ |
+| Tests | 495+ (98.4% pass rate) |
+| Paralinguistic Tags | 9 |
+| Languages | 4 (EN, JP, ZH, KO) |
+
+---
+
+## The Journey to 1.0
+
+Voice Soundboard evolved through seven major phases:
+
+1. **v0.1.0** - Core TTS with Kokoro engine
+2. **v0.2.0** - Chatterbox integration (paralinguistic tags)
+3. **v0.3.0** - Multi-speaker dialogue synthesis
+4. **v0.4.0** - Advanced emotion control (VAD, blending)
+5. **v0.5.0** - Voice cloning with library management
+6. **v0.6.0** - Neural audio codecs for LLM integration
+7. **v0.7.0** - Real-time voice conversion
+8. **v1.0.0** - LLM integration, mobile access, feature complete
 
 ---
 
 ## Use Cases
 
-### Customer Service Bots
-Give chatbots warm, professional voices that build trust with customers.
+### Customer Service
+*"Hello! [cheerful] How can I help you today?"*
 
-### Accessibility Tools
-Create screen readers and assistive technologies with natural speech.
+Voice bots that sound genuinely friendly, with natural reactions and emotional awareness.
+
+### Accessibility
+Screen readers and assistive technologies with expressive, natural speech that conveys meaning through tone.
 
 ### Content Creation
-Generate voiceovers for videos, podcasts, and presentations.
+Generate audiobooks with multiple characters, each with distinct voices and personalities. Add dramatic pauses, whispers, and emotional emphasis.
 
 ### Gaming & Interactive Media
-Bring NPCs and characters to life with expressive dialogue.
+NPCs that laugh at jokes, sigh in frustration, and gasp in surprise. Dynamic emotion curves for narrative moments.
 
-### Smart Home Assistants
-Build custom voice interfaces for IoT devices.
+### AI Assistants
+Context-aware responses that match the user's emotional state. An AI that sounds genuinely empathetic, not robotic.
 
 ---
 
 ## Getting Started
 
 ```bash
-pip install voice-soundboard
+# Install
+pip install voice-soundboard[all]
+
+# Download models
+mkdir models && cd models
+curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 ```
 
 ```python
 from voice_soundboard import VoiceEngine, play_audio
 
 engine = VoiceEngine()
-result = engine.speak("Welcome to the future of AI speech!")
+result = engine.speak("Welcome to Voice Soundboard 1.0!")
 play_audio(result.audio_path)
 ```
 
 ---
 
+## Integration Options
+
+### MCP for AI Agents
+```json
+{
+  "mcpServers": {
+    "voice-soundboard": {
+      "command": "python",
+      "args": ["-m", "voice_soundboard.server"]
+    }
+  }
+}
+```
+
+### WebSocket for Real-Time Apps
+```javascript
+ws.send(JSON.stringify({
+  action: "speak",
+  text: "Real-time voice synthesis!",
+  emotion: "excited"
+}));
+```
+
+### REST API for Mobile
+```bash
+curl -X POST http://localhost:8080/api/speak \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello from mobile!", "voice": "af_bella"}'
+```
+
+---
+
+## Security First
+
+Voice Soundboard is built with security as a priority:
+
+- **XXE Protection** - Safe SSML parsing with defusedxml
+- **Path Traversal Prevention** - All file operations validated
+- **Voice Cloning Consent** - Required acknowledgment for ethical use
+- **Rate Limiting** - Token bucket algorithm prevents abuse
+- **WebSocket Security** - Origin validation, API keys, TLS
+
+Full security audit available in SECURITY_AUDIT.md.
+
+---
+
 ## Open Source & Community
 
-Voice Soundboard is released under the MIT License. We welcome contributions from the community:
+Voice Soundboard is released under the MIT License. We welcome contributions:
 
 - **GitHub**: github.com/yourusername/voice-soundboard
 - **PyPI**: pypi.org/project/voice-soundboard
-- **Documentation**: Full API docs in README and docstrings
+- **Documentation**: Full API docs, examples, and guides
 
 ---
 
-## About
+## What's Next?
 
-Voice Soundboard was created to democratize high-quality speech synthesis. By combining state-of-the-art TTS with intuitive natural language control, we're making it easier than ever for developers to create engaging, voice-enabled AI applications.
-
----
-
-## Media Contact
-
-For press inquiries, please open an issue on GitHub or reach out through the repository discussions.
+While 1.0 is feature-complete, development continues:
+- Performance optimizations
+- Additional TTS backends (F5-TTS, IndexTTS2)
+- More languages
+- Community-requested features
 
 ---
 
-*Voice Soundboard - Because AI should sound as intelligent as it thinks.*
+## Quotes
 
-**###**
+*"Voice Soundboard represents a new paradigm in TTS - where AI doesn't just speak, it expresses."*
+
+*"The paralinguistic tags alone are worth the upgrade. Finally, AI that can laugh naturally."*
+
+*"Multi-speaker dialogue synthesis opens up entirely new possibilities for content creation."*
 
 ---
 
 ## Quick Facts
 
-- **Release Date**: January 2026
-- **Version**: 0.1.0
+- **Release Date**: January 22, 2026
+- **Version**: 1.0.0 "2027 Edition"
 - **License**: MIT
 - **Language**: Python 3.10+
-- **Dependencies**: Kokoro ONNX, soundfile, sounddevice, defusedxml
 - **Platforms**: Windows, Linux, macOS
+- **GPU**: Optional (CUDA for acceleration)
+
+---
+
+<p align="center">
+  <strong>Voice Soundboard 1.0</strong><br>
+  <em>Because AI should sound as intelligent as it thinks.</em>
+</p>
+
+---
+
+## Media Resources
+
+- High-resolution logo: [Coming Soon]
+- Demo video: [Coming Soon]
+- Live demo: [Coming Soon]
+
+## Contact
+
+For press inquiries, partnerships, or questions:
+- Open an issue on GitHub
+- Join the community discussions
+
+**###**

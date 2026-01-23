@@ -142,9 +142,16 @@ class VoiceWebSocketServer:
         # SSL/TLS setup
         self._ssl_context: Optional[ssl.SSLContext] = None
         if ssl_cert and ssl_key:
-            self._ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            self._ssl_context.load_cert_chain(ssl_cert, ssl_key)
-            logger.info("TLS enabled")
+            try:
+                self._ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                self._ssl_context.load_cert_chain(ssl_cert, ssl_key)
+                logger.info("TLS enabled")
+            except ssl.SSLError as e:
+                logger.error("Failed to load SSL certificate/key: %s", e)
+                raise ValueError(f"SSL configuration error: {e}") from e
+            except FileNotFoundError as e:
+                logger.error("SSL certificate or key file not found: %s", e)
+                raise ValueError(f"SSL file not found: {e}") from e
 
         # Engine instances (lazy loaded)
         self._engine: Optional[VoiceEngine] = None
@@ -161,14 +168,23 @@ class VoiceWebSocketServer:
         """Lazy-load voice engine."""
         if self._engine is None:
             logger.info("Loading voice engine...")
-            self._engine = VoiceEngine()
-            logger.info("Voice engine loaded")
+            try:
+                self._engine = VoiceEngine()
+                logger.info("Voice engine loaded")
+            except Exception as e:
+                logger.error("Failed to load voice engine: %s", e)
+                raise RuntimeError(f"Voice engine initialization failed: {e}") from e
         return self._engine
 
     def _get_streaming_engine(self) -> StreamingEngine:
         """Lazy-load streaming engine."""
         if self._streaming_engine is None:
-            self._streaming_engine = StreamingEngine()
+            try:
+                self._streaming_engine = StreamingEngine()
+                logger.debug("Streaming engine loaded")
+            except Exception as e:
+                logger.error("Failed to load streaming engine: %s", e)
+                raise RuntimeError(f"Streaming engine initialization failed: {e}") from e
         return self._streaming_engine
 
     def _get_client_id(self, ws: WebSocketServerProtocol) -> str:
@@ -195,7 +211,7 @@ class VoiceWebSocketServer:
         try:
             await ws.send(response.to_json())
         except websockets.exceptions.ConnectionClosed:
-            pass
+            logger.debug("Could not send response: connection closed")
 
     async def _send_error(
         self,
@@ -731,17 +747,24 @@ class VoiceWebSocketServer:
 
         self._is_running = True
 
-        async with serve(
-            self.connection_handler,
-            self.host,
-            self.port,
-            ssl=self._ssl_context,
-            max_size=self._config.max_message_size,
-            ping_interval=30,  # Keep-alive ping every 30s
-            ping_timeout=10,   # Close if no pong in 10s
-        ):
-            logger.info(f"WebSocket server running on {protocol}://{self.host}:{self.port}")
-            await asyncio.Future()  # Run forever
+        try:
+            async with serve(
+                self.connection_handler,
+                self.host,
+                self.port,
+                ssl=self._ssl_context,
+                max_size=self._config.max_message_size,
+                ping_interval=30,  # Keep-alive ping every 30s
+                ping_timeout=10,   # Close if no pong in 10s
+            ):
+                logger.info(f"WebSocket server running on {protocol}://{self.host}:{self.port}")
+                await asyncio.Future()  # Run forever
+        except OSError as e:
+            logger.error("Failed to start WebSocket server: %s", e)
+            raise RuntimeError(f"Could not bind to {self.host}:{self.port}: {e}") from e
+        except Exception as e:
+            logger.error("WebSocket server error: %s", e)
+            raise
 
     def run(self):
         """Run the server (blocking)."""

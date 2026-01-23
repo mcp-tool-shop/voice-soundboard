@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Soundboard - WebSocket Demo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 30px;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status.connected {
+            background: #0f5132;
+            color: #d1e7dd;
+        }
+
+        .status.disconnected {
+            background: #842029;
+            color: #f8d7da;
+        }
+
+        .card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #00d4ff;
+            font-size: 1.2em;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #0f0f23;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #333;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .effects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .effects-grid button {
+            margin: 0;
+            padding: 15px 10px;
+            font-size: 14px;
+        }
+
+        .log {
+            background: #0f0f23;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-entry.sent {
+            color: #00d4ff;
+        }
+
+        .log-entry.received {
+            color: #38ef7d;
+        }
+
+        .log-entry.error {
+            color: #f5576c;
+        }
+
+        .voice-select {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .voice-select {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🎙️ Voice Soundboard WebSocket Demo</h1>
+
+    <!-- Connection Status -->
+    <div id="status" class="status disconnected">
+        ⚪ Disconnected
+    </div>
+
+    <!-- Connection Card -->
+    <div class="card">
+        <h2>🔌 Connection</h2>
+        <div class="form-group">
+            <label>WebSocket URL</label>
+            <input type="text" id="wsUrl" value="ws://localhost:8765" placeholder="ws://localhost:8765">
+        </div>
+        <div class="form-group">
+            <label>API Key (optional)</label>
+            <input type="text" id="apiKey" placeholder="Leave empty if not required">
+        </div>
+        <button id="connectBtn" onclick="connect()">Connect</button>
+        <button id="disconnectBtn" class="btn-secondary" onclick="disconnect()" disabled>Disconnect</button>
+    </div>
+
+    <!-- Speech Card -->
+    <div class="card">
+        <h2>🗣️ Speech Generation</h2>
+        <div class="form-group">
+            <label>Text to speak</label>
+            <textarea id="speechText" placeholder="Enter text to convert to speech...">Hello! Welcome to Voice Soundboard.</textarea>
+        </div>
+        <div class="voice-select">
+            <div class="form-group">
+                <label>Voice</label>
+                <select id="voiceSelect">
+                    <option value="">Default</option>
+                    <option value="af_bella">American Female - Bella</option>
+                    <option value="af_nicole">American Female - Nicole</option>
+                    <option value="am_michael">American Male - Michael</option>
+                    <option value="bm_george">British Male - George</option>
+                    <option value="bf_emma">British Female - Emma</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Emotion</label>
+                <select id="emotionSelect">
+                    <option value="">None</option>
+                    <option value="happy">Happy</option>
+                    <option value="sad">Sad</option>
+                    <option value="excited">Excited</option>
+                    <option value="calm">Calm</option>
+                    <option value="angry">Angry</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Style hint (natural language)</label>
+            <input type="text" id="styleHint" placeholder="e.g., warmly and cheerfully">
+        </div>
+        <button onclick="speak()" class="btn-success">🔊 Speak</button>
+        <button onclick="speakStream()" class="btn-warning">⚡ Stream</button>
+    </div>
+
+    <!-- Effects Card -->
+    <div class="card">
+        <h2>🔔 Sound Effects</h2>
+        <div class="effects-grid">
+            <button onclick="playEffect('chime')">🔔 Chime</button>
+            <button onclick="playEffect('success')">✅ Success</button>
+            <button onclick="playEffect('error')">❌ Error</button>
+            <button onclick="playEffect('attention')">⚠️ Attention</button>
+            <button onclick="playEffect('click')">👆 Click</button>
+            <button onclick="playEffect('pop')">💥 Pop</button>
+            <button onclick="playEffect('whoosh')">💨 Whoosh</button>
+            <button onclick="playEffect('info')">ℹ️ Info</button>
+        </div>
+    </div>
+
+    <!-- Dialogue Card -->
+    <div class="card">
+        <h2>🎭 Multi-Speaker Dialogue</h2>
+        <div class="form-group">
+            <label>Script</label>
+            <textarea id="dialogueScript" rows="6">[S1:alice] Hey, have you tried Voice Soundboard?
+[S2:bob] No, what is it?
+[S1:alice] It's amazing! 54 voices and real emotions!
+[S2:bob] (excited) That sounds incredible!</textarea>
+        </div>
+        <button onclick="speakDialogue()" class="btn-success">🎬 Generate Dialogue</button>
+    </div>
+
+    <!-- Log Card -->
+    <div class="card">
+        <h2>📋 Message Log</h2>
+        <div id="log" class="log">
+            <div class="log-entry">Waiting for connection...</div>
+        </div>
+        <button onclick="clearLog()" class="btn-secondary" style="margin-top: 10px;">Clear Log</button>
+    </div>
+
+    <script>
+        let ws = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function updateStatus(connected) {
+            const status = document.getElementById('status');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+
+            if (connected) {
+                status.className = 'status connected';
+                status.textContent = '🟢 Connected';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+            } else {
+                status.className = 'status disconnected';
+                status.textContent = '⚪ Disconnected';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+            }
+        }
+
+        function connect() {
+            const url = document.getElementById('wsUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+
+            const fullUrl = apiKey ? `${url}?key=${apiKey}` : url;
+
+            log(`Connecting to ${url}...`, 'sent');
+
+            try {
+                ws = new WebSocket(fullUrl);
+
+                ws.onopen = () => {
+                    log('Connected successfully!', 'received');
+                    updateStatus(true);
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`Received: ${JSON.stringify(data).substring(0, 200)}...`, 'received');
+                    } catch {
+                        log(`Received: ${event.data.substring(0, 200)}...`, 'received');
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    log(`Error: ${error.message || 'Connection failed'}`, 'error');
+                };
+
+                ws.onclose = () => {
+                    log('Connection closed', 'error');
+                    updateStatus(false);
+                    ws = null;
+                };
+            } catch (error) {
+                log(`Failed to connect: ${error.message}`, 'error');
+            }
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function send(action, params = {}) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('Not connected!', 'error');
+                return;
+            }
+
+            const message = { action, ...params };
+            log(`Sending: ${JSON.stringify(message)}`, 'sent');
+            ws.send(JSON.stringify(message));
+        }
+
+        function speak() {
+            const text = document.getElementById('speechText').value;
+            const voice = document.getElementById('voiceSelect').value;
+            const emotion = document.getElementById('emotionSelect').value;
+            const style = document.getElementById('styleHint').value;
+
+            const params = { text, play: true };
+            if (voice) params.voice = voice;
+            if (emotion) params.emotion = emotion;
+            if (style) params.style = style;
+
+            send('speak', params);
+        }
+
+        function speakStream() {
+            const text = document.getElementById('speechText').value;
+            const voice = document.getElementById('voiceSelect').value;
+
+            const params = { text };
+            if (voice) params.voice = voice;
+
+            send('speak_stream', params);
+        }
+
+        function playEffect(effectName) {
+            send('effect', { effect: effectName, play: true });
+        }
+
+        function speakDialogue() {
+            const script = document.getElementById('dialogueScript').value;
+            send('dialogue', {
+                script,
+                voices: {
+                    alice: 'af_bella',
+                    bob: 'am_michael'
+                },
+                play: true
+            });
+        }
+
+        // Auto-connect on page load if server is likely running
+        window.onload = () => {
+            log('Ready. Click "Connect" to connect to the WebSocket server.');
+        };
+    </script>
+</body>
+</html>

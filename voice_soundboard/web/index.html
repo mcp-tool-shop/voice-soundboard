@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>Voice Soundboard</title>
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #0f3460;
+            --accent: #e94560;
+            --accent-hover: #ff6b6b;
+            --text-primary: #eaeaea;
+            --text-secondary: #a0a0a0;
+            --success: #4ecca3;
+            --warning: #ffc107;
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 100px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--bg-card);
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8em;
+            background: linear-gradient(135deg, var(--accent), #ff8a80);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--warning);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+            animation: none;
+        }
+
+        .status-dot.error {
+            background: var(--accent);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .text-input-wrapper {
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 14px;
+            border: 2px solid var(--bg-card);
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 16px;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .char-count {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+        }
+
+        .voice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .voice-btn {
+            padding: 12px 8px;
+            border: 2px solid var(--bg-card);
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .voice-btn:hover, .voice-btn:active {
+            border-color: var(--accent);
+            transform: scale(0.98);
+        }
+
+        .voice-btn.selected {
+            border-color: var(--accent);
+            background: rgba(233, 69, 96, 0.2);
+        }
+
+        .voice-btn .voice-name {
+            font-weight: 600;
+            display: block;
+        }
+
+        .voice-btn .voice-accent {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--bg-card);
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-card);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+        }
+
+        .slider-value {
+            min-width: 45px;
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .speak-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: var(--border-radius);
+            background: linear-gradient(135deg, var(--accent), #ff6b6b);
+            color: white;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .speak-btn:hover {
+            transform: scale(0.98);
+        }
+
+        .speak-btn:active {
+            transform: scale(0.95);
+        }
+
+        .speak-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .speak-btn.speaking {
+            background: linear-gradient(135deg, var(--success), #6ee7b7);
+            animation: speaking-pulse 1s infinite;
+        }
+
+        @keyframes speaking-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(78, 204, 163, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(78, 204, 163, 0); }
+        }
+
+        .quick-phrases {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .phrase-btn {
+            padding: 10px 16px;
+            border: 1px solid var(--bg-card);
+            border-radius: 20px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .phrase-btn:hover, .phrase-btn:active {
+            border-color: var(--accent);
+            background: rgba(233, 69, 96, 0.1);
+        }
+
+        .effects-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .effect-btn {
+            padding: 14px 8px;
+            border: 2px solid var(--bg-card);
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .effect-btn:hover, .effect-btn:active {
+            border-color: var(--success);
+            transform: scale(0.95);
+        }
+
+        .effect-btn .effect-name {
+            display: block;
+            font-size: 0.5em;
+            margin-top: 4px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.error {
+            background: var(--accent);
+        }
+
+        .toast.success {
+            background: var(--success);
+            color: #1a1a2e;
+        }
+
+        /* Language filter tabs */
+        .lang-tabs {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .lang-tab {
+            padding: 8px 16px;
+            border: 1px solid var(--bg-card);
+            border-radius: 20px;
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            font-size: 0.85em;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .lang-tab.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(233, 69, 96, 0.1);
+        }
+
+        /* Bottom fixed controls */
+        .bottom-controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            padding: 16px;
+            border-top: 1px solid var(--bg-card);
+        }
+
+        .bottom-controls .container {
+            padding: 0;
+            padding-bottom: 0;
+            max-width: 600px;
+        }
+
+        /* Scrollable voice section */
+        .voices-scroll {
+            max-height: 200px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Voice Soundboard</h1>
+            <div class="status-bar">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Text Input -->
+        <div class="card">
+            <div class="card-title">What should I say?</div>
+            <div class="text-input-wrapper">
+                <textarea id="textInput" placeholder="Type something to speak...">Hello! This is a test of the voice soundboard.</textarea>
+                <div class="char-count"><span id="charCount">0</span>/500</div>
+            </div>
+        </div>
+
+        <!-- Quick Phrases -->
+        <div class="card">
+            <div class="card-title">Quick Phrases</div>
+            <div class="quick-phrases">
+                <button class="phrase-btn" data-text="Hello, how can I help you today?">Hello</button>
+                <button class="phrase-btn" data-text="Thank you very much!">Thanks</button>
+                <button class="phrase-btn" data-text="Goodbye, have a great day!">Goodbye</button>
+                <button class="phrase-btn" data-text="I'm sorry, could you repeat that?">Repeat?</button>
+                <button class="phrase-btn" data-text="The price is $99.99">Price</button>
+                <button class="phrase-btn" data-text="Dr. Smith will see you now.">Doctor</button>
+            </div>
+        </div>
+
+        <!-- Voice Selection -->
+        <div class="card">
+            <div class="card-title">Voice</div>
+            <div class="lang-tabs" id="langTabs">
+                <button class="lang-tab active" data-lang="all">All</button>
+                <button class="lang-tab" data-lang="american">American</button>
+                <button class="lang-tab" data-lang="british">British</button>
+                <button class="lang-tab" data-lang="european">European</button>
+                <button class="lang-tab" data-lang="french">French</button>
+                <button class="lang-tab" data-lang="hindi">Hindi</button>
+                <button class="lang-tab" data-lang="italian">Italian</button>
+                <button class="lang-tab" data-lang="japanese">Japanese</button>
+                <button class="lang-tab" data-lang="portuguese">Portuguese</button>
+                <button class="lang-tab" data-lang="mandarin">Mandarin</button>
+            </div>
+            <div class="voices-scroll">
+                <div class="voice-grid" id="voiceGrid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="card">
+            <div class="card-title">Settings</div>
+            <div class="controls">
+                <div class="control-group">
+                    <label class="control-label">Preset</label>
+                    <select id="presetSelect">
+                        <option value="">None</option>
+                        <option value="assistant">Assistant</option>
+                        <option value="narrator">Narrator</option>
+                        <option value="announcer">Announcer</option>
+                        <option value="storyteller">Storyteller</option>
+                        <option value="whisper">Whisper</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Speed: <span id="speedValue">1.0</span>x</label>
+                    <div class="slider-container">
+                        <input type="range" id="speedSlider" min="0.5" max="2.0" step="0.1" value="1.0">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sound Effects -->
+        <div class="card">
+            <div class="card-title">Sound Effects</div>
+            <div class="effects-grid" id="effectsGrid">
+                <button class="effect-btn" data-effect="chime">🔔<span class="effect-name">Chime</span></button>
+                <button class="effect-btn" data-effect="success">✅<span class="effect-name">Success</span></button>
+                <button class="effect-btn" data-effect="error">❌<span class="effect-name">Error</span></button>
+                <button class="effect-btn" data-effect="warning">⚠️<span class="effect-name">Warning</span></button>
+                <button class="effect-btn" data-effect="click">👆<span class="effect-name">Click</span></button>
+                <button class="effect-btn" data-effect="pop">💥<span class="effect-name">Pop</span></button>
+                <button class="effect-btn" data-effect="whoosh">💨<span class="effect-name">Whoosh</span></button>
+                <button class="effect-btn" data-effect="attention">🔊<span class="effect-name">Alert</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fixed Bottom Speak Button -->
+    <div class="bottom-controls">
+        <div class="container">
+            <button class="speak-btn" id="speakBtn">
+                <span>🔊</span>
+                <span>Speak</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Configuration
+        const WS_URL = `ws://${window.location.hostname}:8765`;
+        const API_URL = `http://${window.location.hostname}:8080`;
+
+        // State
+        let ws = null;
+        let selectedVoice = 'af_bella';
+        let isConnected = false;
+        let isSpeaking = false;
+
+        // Available voices (loaded from server)
+        let voices = {};
+
+        // DOM Elements
+        const textInput = document.getElementById('textInput');
+        const charCount = document.getElementById('charCount');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const voiceGrid = document.getElementById('voiceGrid');
+        const langTabs = document.getElementById('langTabs');
+        const speakBtn = document.getElementById('speakBtn');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const presetSelect = document.getElementById('presetSelect');
+        const toast = document.getElementById('toast');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initWebSocket();
+            loadVoices();
+            setupEventListeners();
+            updateCharCount();
+        });
+
+        // WebSocket Connection
+        function initWebSocket() {
+            try {
+                ws = new WebSocket(WS_URL);
+
+                ws.onopen = () => {
+                    isConnected = true;
+                    updateStatus('connected', 'Connected');
+                    showToast('Connected to server', 'success');
+                };
+
+                ws.onclose = () => {
+                    isConnected = false;
+                    updateStatus('error', 'Disconnected');
+                    // Reconnect after 3 seconds
+                    setTimeout(initWebSocket, 3000);
+                };
+
+                ws.onerror = (err) => {
+                    console.error('WebSocket error:', err);
+                    updateStatus('error', 'Connection error');
+                };
+
+                ws.onmessage = (event) => {
+                    handleMessage(JSON.parse(event.data));
+                };
+            } catch (err) {
+                console.error('Failed to connect:', err);
+                updateStatus('error', 'Failed to connect');
+                setTimeout(initWebSocket, 3000);
+            }
+        }
+
+        function handleMessage(msg) {
+            console.log('Received:', msg);
+
+            if (msg.action === 'speak_complete' || msg.action === 'effect_complete') {
+                isSpeaking = false;
+                speakBtn.classList.remove('speaking');
+                speakBtn.disabled = false;
+            }
+
+            if (msg.error) {
+                showToast(msg.error, 'error');
+                isSpeaking = false;
+                speakBtn.classList.remove('speaking');
+                speakBtn.disabled = false;
+            }
+
+            if (msg.action === 'audio_data' && msg.data?.audio) {
+                playBase64Audio(msg.data.audio);
+            }
+        }
+
+        function playBase64Audio(base64Data) {
+            const audio = new Audio('data:audio/wav;base64,' + base64Data);
+            audio.onended = () => {
+                isSpeaking = false;
+                speakBtn.classList.remove('speaking');
+                speakBtn.disabled = false;
+            };
+            audio.play().catch(err => {
+                console.error('Audio playback error:', err);
+                showToast('Audio playback failed', 'error');
+            });
+        }
+
+        // Load voices from API
+        async function loadVoices() {
+            // Default voices if API unavailable
+            voices = {
+                'af_bella': { name: 'Bella', gender: 'female', accent: 'american' },
+                'af_sarah': { name: 'Sarah', gender: 'female', accent: 'american' },
+                'af_nicole': { name: 'Nicole', gender: 'female', accent: 'american' },
+                'am_michael': { name: 'Michael', gender: 'male', accent: 'american' },
+                'am_adam': { name: 'Adam', gender: 'male', accent: 'american' },
+                'bf_emma': { name: 'Emma', gender: 'female', accent: 'british' },
+                'bf_alice': { name: 'Alice', gender: 'female', accent: 'british' },
+                'bm_george': { name: 'George', gender: 'male', accent: 'british' },
+                'bm_daniel': { name: 'Daniel', gender: 'male', accent: 'british' },
+                'ff_siwis': { name: 'Siwis', gender: 'female', accent: 'french' },
+                'hf_alpha': { name: 'Alpha', gender: 'female', accent: 'hindi' },
+                'hm_omega': { name: 'Omega', gender: 'male', accent: 'hindi' },
+                'if_sara': { name: 'Sara', gender: 'female', accent: 'italian' },
+                'im_nicola': { name: 'Nicola', gender: 'male', accent: 'italian' },
+                'jf_alpha': { name: 'Alpha', gender: 'female', accent: 'japanese' },
+                'jm_kumo': { name: 'Kumo', gender: 'male', accent: 'japanese' },
+                'pf_dora': { name: 'Dora', gender: 'female', accent: 'portuguese' },
+                'pm_alex': { name: 'Alex', gender: 'male', accent: 'portuguese' },
+                'zf_xiaoxiao': { name: 'Xiaoxiao', gender: 'female', accent: 'mandarin' },
+                'ef_dora': { name: 'Dora', gender: 'female', accent: 'european' },
+                'em_alex': { name: 'Alex', gender: 'male', accent: 'european' },
+            };
+
+            renderVoices('all');
+        }
+
+        function renderVoices(filter) {
+            voiceGrid.innerHTML = '';
+
+            Object.entries(voices)
+                .filter(([id, v]) => filter === 'all' || v.accent === filter)
+                .forEach(([id, voice]) => {
+                    const btn = document.createElement('button');
+                    btn.className = `voice-btn ${id === selectedVoice ? 'selected' : ''}`;
+                    btn.innerHTML = `
+                        <span class="voice-name">${voice.name}</span>
+                        <span class="voice-accent">${voice.gender === 'female' ? '♀' : '♂'} ${voice.accent}</span>
+                    `;
+                    btn.onclick = () => selectVoice(id);
+                    voiceGrid.appendChild(btn);
+                });
+        }
+
+        function selectVoice(voiceId) {
+            selectedVoice = voiceId;
+            document.querySelectorAll('.voice-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.closest('.voice-btn').classList.add('selected');
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            // Text input
+            textInput.addEventListener('input', updateCharCount);
+
+            // Speed slider
+            speedSlider.addEventListener('input', () => {
+                speedValue.textContent = speedSlider.value;
+            });
+
+            // Language tabs
+            langTabs.addEventListener('click', (e) => {
+                if (e.target.classList.contains('lang-tab')) {
+                    document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+                    renderVoices(e.target.dataset.lang);
+                }
+            });
+
+            // Speak button
+            speakBtn.addEventListener('click', speak);
+
+            // Quick phrases
+            document.querySelectorAll('.phrase-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    textInput.value = btn.dataset.text;
+                    updateCharCount();
+                    speak();
+                });
+            });
+
+            // Sound effects
+            document.querySelectorAll('.effect-btn').forEach(btn => {
+                btn.addEventListener('click', () => playEffect(btn.dataset.effect));
+            });
+        }
+
+        function updateCharCount() {
+            const count = textInput.value.length;
+            charCount.textContent = count;
+        }
+
+        function updateStatus(status, text) {
+            statusDot.className = 'status-dot ' + status;
+            statusText.textContent = text;
+        }
+
+        // Speak action
+        function speak() {
+            const text = textInput.value.trim();
+            if (!text) {
+                showToast('Please enter some text', 'error');
+                return;
+            }
+
+            if (!isConnected) {
+                // Fall back to REST API
+                speakViaAPI(text);
+                return;
+            }
+
+            isSpeaking = true;
+            speakBtn.classList.add('speaking');
+            speakBtn.disabled = true;
+
+            const message = {
+                action: 'speak',
+                text: text,
+                voice: selectedVoice,
+                speed: parseFloat(speedSlider.value),
+                preset: presetSelect.value || undefined,
+                return_audio: true
+            };
+
+            ws.send(JSON.stringify(message));
+        }
+
+        async function speakViaAPI(text) {
+            isSpeaking = true;
+            speakBtn.classList.add('speaking');
+            speakBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/speak`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        voice: selectedVoice,
+                        speed: parseFloat(speedSlider.value),
+                        preset: presetSelect.value || undefined
+                    })
+                });
+
+                if (!response.ok) throw new Error('API request failed');
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const audio = new Audio(url);
+                audio.onended = () => {
+                    URL.revokeObjectURL(url);
+                    isSpeaking = false;
+                    speakBtn.classList.remove('speaking');
+                    speakBtn.disabled = false;
+                };
+                audio.play();
+            } catch (err) {
+                console.error('API error:', err);
+                showToast('Failed to generate speech', 'error');
+                isSpeaking = false;
+                speakBtn.classList.remove('speaking');
+                speakBtn.disabled = false;
+            }
+        }
+
+        function playEffect(effect) {
+            if (!isConnected) {
+                showToast('Not connected to server', 'error');
+                return;
+            }
+
+            ws.send(JSON.stringify({
+                action: 'sound_effect',
+                effect: effect
+            }));
+        }
+
+        function showToast(message, type = '') {
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
