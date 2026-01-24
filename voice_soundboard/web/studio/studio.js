@@ -11,6 +11,17 @@ class VoiceStudio {
         this.currentAudio = null;
         this.previewAudioData = null;
         this.isPlaying = false;
+        this.playbackStartTime = 0;
+        this.playbackOffset = 0;
+
+        // A/B Comparison
+        this.abSlots = {
+            a: { params: null, audio: null, name: null, voice: null },
+            b: { params: null, audio: null, name: null, voice: null }
+        };
+
+        // Tags for save modal
+        this.currentTags = [];
 
         // Current parameters
         this.params = {
@@ -116,6 +127,34 @@ class VoiceStudio {
 
         // Toast container
         this.toastContainer = document.getElementById('toast-container');
+
+        // A/B Comparison elements
+        this.slotA = document.getElementById('slot-a');
+        this.slotB = document.getElementById('slot-b');
+        this.slotAName = document.getElementById('slot-a-name');
+        this.slotBName = document.getElementById('slot-b-name');
+        this.btnCaptureA = document.getElementById('btn-capture-a');
+        this.btnCaptureB = document.getElementById('btn-capture-b');
+        this.btnPlayA = document.getElementById('btn-play-a');
+        this.btnPlayB = document.getElementById('btn-play-b');
+        this.btnSwapAB = document.getElementById('btn-swap-ab');
+        this.btnLoadA = document.getElementById('btn-load-a');
+        this.btnLoadB = document.getElementById('btn-load-b');
+
+        // Export elements
+        this.btnExport = document.getElementById('btn-export');
+        this.exportDropdown = document.getElementById('export-dropdown');
+        this.exportMenu = document.getElementById('export-menu');
+
+        // Waveform seek elements
+        this.waveformContainer = document.querySelector('.waveform-container');
+        this.playhead = document.getElementById('playhead');
+
+        // Tags input elements
+        this.tagsContainer = document.getElementById('tags-container');
+        this.tagsInput = document.getElementById('tags-input');
+        this.suggestedTags = document.getElementById('suggested-tags');
+        this.saveFolder = document.getElementById('save-folder');
     }
 
     bindEvents() {
@@ -219,6 +258,48 @@ class VoiceStudio {
         });
         document.addEventListener('keyup', (e) => {
             if (e.key === 'Shift') this.fineControlActive = false;
+        });
+
+        // A/B Comparison events
+        this.btnCaptureA?.addEventListener('click', () => this.captureToSlot('a'));
+        this.btnCaptureB?.addEventListener('click', () => this.captureToSlot('b'));
+        this.btnPlayA?.addEventListener('click', () => this.playSlot('a'));
+        this.btnPlayB?.addEventListener('click', () => this.playSlot('b'));
+        this.btnSwapAB?.addEventListener('click', () => this.swapABSlots());
+        this.btnLoadA?.addEventListener('click', () => this.loadSlot('a'));
+        this.btnLoadB?.addEventListener('click', () => this.loadSlot('b'));
+
+        // Export dropdown events
+        this.btnExport?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleExportMenu();
+        });
+        document.querySelectorAll('.export-option').forEach(opt => {
+            opt.addEventListener('click', () => this.exportAudio(opt.dataset.format));
+        });
+        document.addEventListener('click', () => this.closeExportMenu());
+
+        // Waveform seek events
+        if (this.waveformContainer) {
+            this.waveformContainer.addEventListener('click', (e) => this.seekWaveform(e));
+            this.waveformContainer.addEventListener('mousemove', (e) => this.updateWaveformHover(e));
+            this.waveformContainer.addEventListener('mouseleave', () => this.hideWaveformHover());
+            this.initWaveformHover();
+        }
+
+        // Tags input events
+        this.tagsInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && this.tagsInput.value.trim()) {
+                e.preventDefault();
+                this.addTag(this.tagsInput.value.trim());
+                this.tagsInput.value = '';
+            } else if (e.key === 'Backspace' && !this.tagsInput.value && this.currentTags.length) {
+                this.removeTag(this.currentTags.length - 1);
+            }
+        });
+        this.tagsContainer?.addEventListener('click', () => this.tagsInput?.focus());
+        document.querySelectorAll('.suggested-tag').forEach(tag => {
+            tag.addEventListener('click', () => this.addTag(tag.dataset.tag));
         });
     }
 
@@ -768,8 +849,9 @@ class VoiceStudio {
             // Draw waveform
             this.drawWaveform(bytes);
 
-            // Enable play button
+            // Enable play and export buttons
             if (this.btnPlay) this.btnPlay.disabled = false;
+            if (this.btnExport) this.btnExport.disabled = false;
 
             this.setPreviewStatus(`Preview ready (${data.duration.toFixed(1)}s)`, 'success');
         } else {
@@ -862,8 +944,14 @@ class VoiceStudio {
         source.buffer = buffer;
         source.connect(this.audioContext.destination);
 
+        // Track playback for playhead animation
+        this.playbackOffset = 0;
+        this.playbackStartTime = this.audioContext.currentTime;
+        const duration = samples.length / sampleRate;
+
         source.onended = () => {
             this.isPlaying = false;
+            this.hidePlayhead();
             if (this.btnStop) this.btnStop.disabled = true;
         };
 
@@ -872,6 +960,7 @@ class VoiceStudio {
         this.isPlaying = true;
 
         if (this.btnStop) this.btnStop.disabled = false;
+        this.startPlayheadAnimation(duration);
     }
 
     stopPreview() {
@@ -882,6 +971,7 @@ class VoiceStudio {
             this.currentAudio = null;
         }
         this.isPlaying = false;
+        this.hidePlayhead();
         if (this.btnStop) this.btnStop.disabled = true;
     }
 
@@ -917,13 +1007,12 @@ class VoiceStudio {
             return;
         }
 
-        const tags = this.saveTags?.value
-            ?.split(',')
-            .map(t => t.trim())
-            .filter(t => t) || [];
+        const folder = this.saveFolder?.value || '';
+        const tags = [...this.currentTags]; // Use the enhanced tags array
 
         this.send('studio_save', {
             name,
+            folder,
             description: this.saveDescription?.value?.trim() || '',
             gender: this.saveGender?.value || null,
             energy: this.saveEnergy?.value || 'neutral',
@@ -931,6 +1020,7 @@ class VoiceStudio {
         });
 
         this.closeSaveModal();
+        this.clearTags();
     }
 
     onPresetSaved(data) {
@@ -953,6 +1043,369 @@ class VoiceStudio {
             toast.style.opacity = '0';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    }
+
+    // ===== A/B Comparison =====
+
+    captureToSlot(slot) {
+        if (!this.sessionId) {
+            this.showToast('Start a session first', 'warning');
+            return;
+        }
+
+        if (!this.previewAudioData) {
+            this.showToast('Generate a preview first', 'warning');
+            return;
+        }
+
+        // Capture current state
+        this.abSlots[slot] = {
+            params: { ...this.params },
+            audio: { ...this.previewAudioData },
+            name: this.generateSlotName(),
+            voice: this.previewVoice?.value || 'af_bella'
+        };
+
+        // Update UI
+        this.updateSlotUI(slot);
+        this.showToast(`Captured to slot ${slot.toUpperCase()}`, 'success');
+    }
+
+    generateSlotName() {
+        const parts = [];
+        if (this.params.formant_ratio < 0.95) parts.push('Deep');
+        else if (this.params.formant_ratio > 1.05) parts.push('Bright');
+        if (this.params.breath_intensity > 0.25) parts.push('Breathy');
+        if (this.params.speed_factor < 0.9) parts.push('Slow');
+        else if (this.params.speed_factor > 1.1) parts.push('Fast');
+        return parts.length > 0 ? parts.join(', ') : 'Default';
+    }
+
+    updateSlotUI(slot) {
+        const slotEl = slot === 'a' ? this.slotA : this.slotB;
+        const nameEl = slot === 'a' ? this.slotAName : this.slotBName;
+        const playBtn = slot === 'a' ? this.btnPlayA : this.btnPlayB;
+        const data = this.abSlots[slot];
+
+        if (data.audio) {
+            slotEl?.classList.add('has-audio');
+            if (nameEl) nameEl.textContent = data.name;
+            if (playBtn) playBtn.disabled = false;
+        } else {
+            slotEl?.classList.remove('has-audio');
+            if (nameEl) nameEl.textContent = 'Empty';
+            if (playBtn) playBtn.disabled = true;
+        }
+    }
+
+    playSlot(slot) {
+        const data = this.abSlots[slot];
+        if (!data.audio || !this.audioContext) return;
+
+        this.stopPreview();
+
+        const { samples, sampleRate } = data.audio;
+        const buffer = this.audioContext.createBuffer(1, samples.length, sampleRate);
+        buffer.copyToChannel(samples, 0);
+
+        const source = this.audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.audioContext.destination);
+
+        source.onended = () => {
+            this.isPlaying = false;
+        };
+
+        source.start(0);
+        this.currentAudio = source;
+        this.isPlaying = true;
+
+        this.showToast(`Playing ${slot.toUpperCase()}`, 'info');
+    }
+
+    swapABSlots() {
+        const temp = this.abSlots.a;
+        this.abSlots.a = this.abSlots.b;
+        this.abSlots.b = temp;
+        this.updateSlotUI('a');
+        this.updateSlotUI('b');
+        this.showToast('Swapped A and B', 'info');
+    }
+
+    loadSlot(slot) {
+        const data = this.abSlots[slot];
+        if (!data.params) {
+            this.showToast(`Slot ${slot.toUpperCase()} is empty`, 'warning');
+            return;
+        }
+
+        // Apply the captured parameters
+        this.send('studio_adjust', data.params);
+        this.showToast(`Loaded ${slot.toUpperCase()} settings`, 'success');
+    }
+
+    // ===== Export =====
+
+    toggleExportMenu() {
+        this.exportDropdown?.classList.toggle('open');
+        this.exportMenu?.classList.toggle('hidden');
+    }
+
+    closeExportMenu() {
+        this.exportDropdown?.classList.remove('open');
+        this.exportMenu?.classList.add('hidden');
+    }
+
+    async exportAudio(format) {
+        this.closeExportMenu();
+
+        if (!this.previewAudioData) {
+            this.showToast('Generate a preview first', 'warning');
+            return;
+        }
+
+        this.showToast(`Exporting as ${format.toUpperCase()}...`, 'info');
+
+        try {
+            const { samples, sampleRate } = this.previewAudioData;
+            let blob;
+
+            if (format === 'wav') {
+                blob = this.encodeWav(samples, sampleRate);
+            } else {
+                // For other formats, send to server for encoding
+                this.send('studio_export', {
+                    format,
+                    audio_base64: this.floatArrayToBase64(samples),
+                    sample_rate: sampleRate
+                });
+                return;
+            }
+
+            // Download the blob
+            this.downloadBlob(blob, `voice_preview.${format}`);
+            this.showToast(`Exported as ${format.toUpperCase()}`, 'success');
+        } catch (e) {
+            this.showToast('Export failed: ' + e.message, 'error');
+        }
+    }
+
+    encodeWav(samples, sampleRate) {
+        const numChannels = 1;
+        const bitsPerSample = 16;
+        const bytesPerSample = bitsPerSample / 8;
+        const blockAlign = numChannels * bytesPerSample;
+
+        const buffer = new ArrayBuffer(44 + samples.length * bytesPerSample);
+        const view = new DataView(buffer);
+
+        const writeString = (offset, str) => {
+            for (let i = 0; i < str.length; i++) {
+                view.setUint8(offset + i, str.charCodeAt(i));
+            }
+        };
+
+        // WAV header
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + samples.length * bytesPerSample, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * blockAlign, true);
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, bitsPerSample, true);
+        writeString(36, 'data');
+        view.setUint32(40, samples.length * bytesPerSample, true);
+
+        // Convert float samples to 16-bit PCM
+        let offset = 44;
+        for (let i = 0; i < samples.length; i++) {
+            const s = Math.max(-1, Math.min(1, samples[i]));
+            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            offset += 2;
+        }
+
+        return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    floatArrayToBase64(float32Array) {
+        const uint8Array = new Uint8Array(float32Array.buffer);
+        let binary = '';
+        for (let i = 0; i < uint8Array.length; i++) {
+            binary += String.fromCharCode(uint8Array[i]);
+        }
+        return btoa(binary);
+    }
+
+    downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // ===== Waveform Seek =====
+
+    initWaveformHover() {
+        // Create hover line and tooltip
+        this.hoverLine = document.createElement('div');
+        this.hoverLine.className = 'waveform-hover-line';
+        this.waveformContainer?.appendChild(this.hoverLine);
+
+        this.timeTooltip = document.createElement('div');
+        this.timeTooltip.className = 'waveform-time-tooltip';
+        this.waveformContainer?.appendChild(this.timeTooltip);
+    }
+
+    updateWaveformHover(e) {
+        if (!this.previewAudioData || !this.hoverLine || !this.timeTooltip) return;
+
+        const rect = this.waveformContainer.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const percent = x / rect.width;
+        const duration = this.previewAudioData.samples.length / this.previewAudioData.sampleRate;
+        const time = percent * duration;
+
+        this.hoverLine.style.left = `${x}px`;
+        this.timeTooltip.style.left = `${x}px`;
+        this.timeTooltip.textContent = this.formatTime(time);
+    }
+
+    hideWaveformHover() {
+        // Opacity is handled by CSS :hover
+    }
+
+    seekWaveform(e) {
+        if (!this.previewAudioData || !this.audioContext) return;
+
+        const rect = this.waveformContainer.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const percent = x / rect.width;
+        const duration = this.previewAudioData.samples.length / this.previewAudioData.sampleRate;
+        const seekTime = percent * duration;
+
+        // Stop current playback
+        this.stopPreview();
+
+        // Start playback from seek position
+        const { samples, sampleRate } = this.previewAudioData;
+        const startSample = Math.floor(seekTime * sampleRate);
+        const remainingSamples = samples.slice(startSample);
+
+        if (remainingSamples.length === 0) return;
+
+        const buffer = this.audioContext.createBuffer(1, remainingSamples.length, sampleRate);
+        buffer.copyToChannel(remainingSamples, 0);
+
+        const source = this.audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.audioContext.destination);
+
+        // Track playback for playhead animation
+        this.playbackOffset = seekTime;
+        this.playbackStartTime = this.audioContext.currentTime;
+
+        source.onended = () => {
+            this.isPlaying = false;
+            this.hidePlayhead();
+            if (this.btnStop) this.btnStop.disabled = true;
+        };
+
+        source.start(0);
+        this.currentAudio = source;
+        this.isPlaying = true;
+
+        if (this.btnStop) this.btnStop.disabled = false;
+        this.startPlayheadAnimation(duration);
+    }
+
+    startPlayheadAnimation(duration) {
+        if (!this.playhead || !this.waveformContainer) return;
+
+        this.playhead.classList.remove('hidden');
+
+        const animate = () => {
+            if (!this.isPlaying) {
+                this.hidePlayhead();
+                return;
+            }
+
+            const elapsed = this.audioContext.currentTime - this.playbackStartTime;
+            const currentTime = this.playbackOffset + elapsed;
+            const percent = currentTime / duration;
+
+            if (percent >= 1) {
+                this.hidePlayhead();
+                return;
+            }
+
+            const rect = this.waveformContainer.getBoundingClientRect();
+            this.playhead.style.left = `${percent * rect.width}px`;
+
+            requestAnimationFrame(animate);
+        };
+
+        requestAnimationFrame(animate);
+    }
+
+    hidePlayhead() {
+        this.playhead?.classList.add('hidden');
+    }
+
+    formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        const ms = Math.floor((seconds % 1) * 10);
+        return `${mins}:${secs.toString().padStart(2, '0')}.${ms}`;
+    }
+
+    // ===== Tags Input =====
+
+    addTag(tagText) {
+        const tag = tagText.toLowerCase().trim();
+        if (!tag || this.currentTags.includes(tag)) return;
+
+        this.currentTags.push(tag);
+        this.renderTags();
+    }
+
+    removeTag(index) {
+        this.currentTags.splice(index, 1);
+        this.renderTags();
+    }
+
+    clearTags() {
+        this.currentTags = [];
+        this.renderTags();
+    }
+
+    renderTags() {
+        if (!this.tagsContainer) return;
+
+        // Remove existing tag elements (keep the input)
+        this.tagsContainer.querySelectorAll('.preset-tag').forEach(el => el.remove());
+
+        // Add tag elements before the input
+        this.currentTags.forEach((tag, index) => {
+            const tagEl = document.createElement('span');
+            tagEl.className = 'preset-tag';
+            tagEl.innerHTML = `
+                ${tag}
+                <button class="remove-tag" data-index="${index}">&times;</button>
+            `;
+            tagEl.querySelector('.remove-tag').addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.removeTag(index);
+            });
+            this.tagsContainer.insertBefore(tagEl, this.tagsInput);
+        });
     }
 }
 

@@ -333,10 +333,109 @@
                                 </svg>
                                 Stop
                             </button>
+                            <!-- Export dropdown -->
+                            <div class="export-dropdown" id="export-dropdown">
+                                <button class="btn btn-secondary" id="btn-export" disabled>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7 10 12 15 17 10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                    Export
+                                    <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9"/>
+                                    </svg>
+                                </button>
+                                <div class="export-menu hidden" id="export-menu">
+                                    <button class="export-option" data-format="wav">
+                                        <span class="format-name">WAV</span>
+                                        <span class="format-desc">Lossless, large file</span>
+                                    </button>
+                                    <button class="export-option" data-format="mp3">
+                                        <span class="format-name">MP3</span>
+                                        <span class="format-desc">Compressed, universal</span>
+                                    </button>
+                                    <button class="export-option" data-format="ogg">
+                                        <span class="format-name">OGG</span>
+                                        <span class="format-desc">Open format, good quality</span>
+                                    </button>
+                                    <button class="export-option" data-format="flac">
+                                        <span class="format-name">FLAC</span>
+                                        <span class="format-desc">Lossless, smaller than WAV</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Status -->
                         <div id="preview-status" class="preview-status"></div>
+                    </div>
+                </div>
+
+                <!-- A/B Comparison Card -->
+                <div class="card ab-comparison-card" id="ab-comparison-card">
+                    <div class="card-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M8 3v18M16 3v18M3 12h18"/>
+                            </svg>
+                            A/B Comparison
+                        </h2>
+                        <span class="badge badge-new">NEW</span>
+                    </div>
+                    <div class="card-body ab-body">
+                        <div class="ab-slots">
+                            <!-- Slot A -->
+                            <div class="ab-slot" id="slot-a">
+                                <div class="ab-slot-header">
+                                    <span class="ab-label">A</span>
+                                    <span class="ab-slot-name" id="slot-a-name">Empty</span>
+                                    <button class="btn btn-ghost btn-sm ab-capture" id="btn-capture-a" title="Capture current settings">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <button class="btn btn-secondary ab-play" id="btn-play-a" disabled>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="5 3 19 12 5 21 5 3"/>
+                                    </svg>
+                                    Play A
+                                </button>
+                            </div>
+                            <!-- VS Divider -->
+                            <div class="ab-divider">
+                                <span>VS</span>
+                            </div>
+                            <!-- Slot B -->
+                            <div class="ab-slot" id="slot-b">
+                                <div class="ab-slot-header">
+                                    <span class="ab-label ab-label-b">B</span>
+                                    <span class="ab-slot-name" id="slot-b-name">Empty</span>
+                                    <button class="btn btn-ghost btn-sm ab-capture" id="btn-capture-b" title="Capture current settings">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <button class="btn btn-secondary ab-play" id="btn-play-b" disabled>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="5 3 19 12 5 21 5 3"/>
+                                    </svg>
+                                    Play B
+                                </button>
+                            </div>
+                        </div>
+                        <div class="ab-actions">
+                            <button class="btn btn-ghost btn-sm" id="btn-swap-ab" title="Swap A and B">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M7 16V4M7 4L3 8M7 4l4 4M17 8v12M17 20l4-4M17 20l-4-4"/>
+                                </svg>
+                                Swap
+                            </button>
+                            <button class="btn btn-ghost btn-sm" id="btn-load-a" title="Load A settings">Load A</button>
+                            <button class="btn btn-ghost btn-sm" id="btn-load-b" title="Load B settings">Load B</button>
+                        </div>
                     </div>
                 </div>
 
@@ -536,6 +635,25 @@
                         <label>Preset Name *</label>
                         <input type="text" id="save-name" class="input" placeholder="e.g., Warm Documentary Narrator">
                     </div>
+                    <!-- Folder Selection -->
+                    <div class="form-group">
+                        <label>Folder</label>
+                        <div class="folder-select">
+                            <select id="save-folder" class="select">
+                                <option value="">No folder (root)</option>
+                                <option value="narration">Narration</option>
+                                <option value="characters">Characters</option>
+                                <option value="commercial">Commercial</option>
+                                <option value="meditation">Meditation</option>
+                                <option value="podcast">Podcast</option>
+                            </select>
+                            <button id="btn-new-folder" class="btn btn-ghost btn-sm" title="Create new folder">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label>Description</label>
                         <textarea id="save-description" class="textarea" rows="2" placeholder="Describe this voice preset..."></textarea>
@@ -559,9 +677,22 @@
                             </select>
                         </div>
                     </div>
+                    <!-- Enhanced Tags Input -->
                     <div class="form-group">
-                        <label>Tags (comma-separated)</label>
-                        <input type="text" id="save-tags" class="input" placeholder="e.g., warm, narrator, documentary">
+                        <label>Tags</label>
+                        <div class="tags-input-container" id="tags-container">
+                            <input type="text" class="tags-text-input" id="tags-input" placeholder="Type and press Enter...">
+                        </div>
+                        <div class="suggested-tags" id="suggested-tags">
+                            <button class="suggested-tag" data-tag="warm">warm</button>
+                            <button class="suggested-tag" data-tag="deep">deep</button>
+                            <button class="suggested-tag" data-tag="bright">bright</button>
+                            <button class="suggested-tag" data-tag="narrator">narrator</button>
+                            <button class="suggested-tag" data-tag="professional">professional</button>
+                            <button class="suggested-tag" data-tag="friendly">friendly</button>
+                            <button class="suggested-tag" data-tag="calm">calm</button>
+                            <button class="suggested-tag" data-tag="energetic">energetic</button>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
