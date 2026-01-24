@@ -85,6 +85,40 @@ class AcousticParams:
     # Speed modification
     speed_factor: float = 1.0        # Speech rate multiplier
 
+    # === Vocology Parameters ===
+    # Emotional state (affects multiple params automatically)
+    emotional_state: str = "neutral"  # neutral, excited, calm, tired, confident, intimate
+
+    # Pitch scooping (natural slide into notes)
+    scoop_cents: float = 30.0        # How flat to start before sliding up (0-60)
+
+    # Phrase-final intonation
+    final_drop_cents: float = 20.0   # Negative = drop (declarative), positive = rise (question)
+
+    # Pitch overshoot on stressed words
+    overshoot_cents: float = 15.0    # Brief overshoot amount (0-30)
+
+    # Timing bias (confident = ahead, tired = behind)
+    timing_bias_ms: float = 0.0      # -20 to +20 ms
+
+    # === Research Lab Parameters ===
+    # Phonation type (voice quality)
+    phonation_type: str = "modal"    # modal, breathy, creaky, harsh
+    phonation_intensity: float = 0.5 # How strongly to apply phonation (0-1)
+
+    # Jitter/drift rate control
+    jitter_rate_hz: float = 10.0     # Rate of pitch micro-variation (5-20 Hz)
+    drift_rate_hz: float = 0.5       # Rate of phrase-level pitch drift (0.1-1.5 Hz)
+
+    # Intonation Unit duration (based on 2024 neuroscience research)
+    iu_duration_s: float = 1.6       # Universal speech rhythm ~1.6s (1.0-2.5s)
+
+    # Voice clarity
+    hnr_target_db: float = 20.0      # Harmonic-to-noise ratio target (5-30 dB)
+
+    # Spectral tilt (high frequency roll-off)
+    spectral_tilt_db: float = -12.0  # Steeper = darker/breathier (-20 to -4)
+
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
         return {
@@ -97,6 +131,20 @@ class AcousticParams:
             "pitch_drift_cents": self.pitch_drift_cents,
             "timing_variation_ms": self.timing_variation_ms,
             "speed_factor": self.speed_factor,
+            # Vocology params
+            "emotional_state": self.emotional_state,
+            "scoop_cents": self.scoop_cents,
+            "final_drop_cents": self.final_drop_cents,
+            "overshoot_cents": self.overshoot_cents,
+            "timing_bias_ms": self.timing_bias_ms,
+            # Research Lab params
+            "phonation_type": self.phonation_type,
+            "phonation_intensity": self.phonation_intensity,
+            "jitter_rate_hz": self.jitter_rate_hz,
+            "drift_rate_hz": self.drift_rate_hz,
+            "iu_duration_s": self.iu_duration_s,
+            "hnr_target_db": self.hnr_target_db,
+            "spectral_tilt_db": self.spectral_tilt_db,
         }
 
     @classmethod

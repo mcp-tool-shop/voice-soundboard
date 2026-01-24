@@ -164,6 +164,7 @@ class VoiceStudioSession:
 
         # Apply each parameter
         param_mapping = {
+            # Basic params
             "formant_ratio": "formant_ratio",
             "breath_intensity": "breath_intensity",
             "breath_volume_db": "breath_volume_db",
@@ -173,6 +174,20 @@ class VoiceStudioSession:
             "timing_variation_ms": "timing_variation_ms",
             "speed_factor": "speed_factor",
             "pitch_shift_semitones": "pitch_shift_semitones",
+            # Vocology params
+            "emotional_state": "emotional_state",
+            "scoop_cents": "scoop_cents",
+            "final_drop_cents": "final_drop_cents",
+            "overshoot_cents": "overshoot_cents",
+            "timing_bias_ms": "timing_bias_ms",
+            # Research Lab params
+            "phonation_type": "phonation_type",
+            "phonation_intensity": "phonation_intensity",
+            "jitter_rate_hz": "jitter_rate_hz",
+            "drift_rate_hz": "drift_rate_hz",
+            "iu_duration_s": "iu_duration_s",
+            "hnr_target_db": "hnr_target_db",
+            "spectral_tilt_db": "spectral_tilt_db",
         }
 
         for key, value in params.items():
@@ -313,15 +328,7 @@ class VoiceStudioSession:
             "base_preset": self.base_preset_id,
             "name": self.current_preset.name,
             "description": self.current_preset.description,
-            "parameters": {
-                "formant_ratio": params.get("formant_ratio", 1.0),
-                "breath_intensity": params.get("breath_intensity", 0.15),
-                "jitter_percent": params.get("jitter_percent", 0.5),
-                "shimmer_percent": params.get("shimmer_percent", 2.0),
-                "pitch_drift_cents": params.get("pitch_drift_cents", 8.0),
-                "timing_variation_ms": params.get("timing_variation_ms", 10.0),
-                "speed_factor": params.get("speed_factor", 1.0),
-            },
+            "parameters": params,  # Return all parameters (now includes vocology)
             "can_undo": len(self.undo_stack) > 0,
             "can_redo": len(self.redo_stack) > 0,
             "preview_voice": self.preview_voice,

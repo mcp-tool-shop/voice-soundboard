@@ -34,7 +34,21 @@ class VoiceStudio {
             // Advanced params
             shimmer_percent: 2.0,
             breath_volume_db: -25.0,
-            pitch_shift_semitones: 0.0
+            pitch_shift_semitones: 0.0,
+            // Vocology params
+            emotional_state: 'neutral',
+            scoop_cents: 30.0,
+            final_drop_cents: 20.0,
+            overshoot_cents: 15.0,
+            timing_bias_ms: 0.0,
+            // Research Lab params
+            phonation_type: 'modal',
+            phonation_intensity: 0.5,
+            jitter_rate_hz: 10.0,
+            drift_rate_hz: 0.5,
+            iu_duration_s: 1.6,
+            hnr_target_db: 20.0,
+            spectral_tilt_db: -12.0
         };
 
         // Pending suggestions from AI
@@ -95,7 +109,19 @@ class VoiceStudio {
             // Advanced
             shimmer: document.getElementById('param-shimmer'),
             breathVol: document.getElementById('param-breath-vol'),
-            pitchShift: document.getElementById('param-pitch-shift')
+            pitchShift: document.getElementById('param-pitch-shift'),
+            // Vocology
+            scoop: document.getElementById('param-scoop'),
+            finalIntonation: document.getElementById('param-final-intonation'),
+            overshoot: document.getElementById('param-overshoot'),
+            timingBias: document.getElementById('param-timing-bias'),
+            // Research Lab
+            phonationIntensity: document.getElementById('param-phonation-intensity'),
+            jitterRate: document.getElementById('param-jitter-rate'),
+            driftRate: document.getElementById('param-drift-rate'),
+            iuDuration: document.getElementById('param-iu-duration'),
+            hnr: document.getElementById('param-hnr'),
+            spectralTilt: document.getElementById('param-spectral-tilt')
         };
 
         // Parameter value displays
@@ -109,7 +135,19 @@ class VoiceStudio {
             // Advanced
             shimmer: document.getElementById('shimmer-value'),
             breathVol: document.getElementById('breath-vol-value'),
-            pitchShift: document.getElementById('pitch-shift-value')
+            pitchShift: document.getElementById('pitch-shift-value'),
+            // Vocology
+            scoop: document.getElementById('scoop-value'),
+            finalIntonation: document.getElementById('final-intonation-value'),
+            overshoot: document.getElementById('overshoot-value'),
+            timingBias: document.getElementById('timing-bias-value'),
+            // Research Lab
+            phonationIntensity: document.getElementById('phonation-intensity-value'),
+            jitterRate: document.getElementById('jitter-rate-value'),
+            driftRate: document.getElementById('drift-rate-value'),
+            iuDuration: document.getElementById('iu-value'),
+            hnr: document.getElementById('hnr-value'),
+            spectralTilt: document.getElementById('spectral-tilt-value')
         };
 
         this.btnResetParams = document.getElementById('btn-reset-params');
@@ -300,6 +338,24 @@ class VoiceStudio {
         this.tagsContainer?.addEventListener('click', () => this.tagsInput?.focus());
         document.querySelectorAll('.suggested-tag').forEach(tag => {
             tag.addEventListener('click', () => this.addTag(tag.dataset.tag));
+        });
+
+        // Emotion chips (Vocology)
+        document.querySelectorAll('.emotion-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.emotion-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                this.setEmotionalState(chip.dataset.emotion);
+            });
+        });
+
+        // Phonation type chips (Research Lab)
+        document.querySelectorAll('.phonation-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.phonation-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                this.setPhonationType(chip.dataset.phonation);
+            });
         });
     }
 
@@ -529,6 +585,64 @@ class VoiceStudio {
             this.updateValueDisplay('pitchShift', params.pitch_shift_semitones ?? 0.0);
         }
 
+        // Vocology params
+        if (this.sliders.scoop) {
+            this.sliders.scoop.value = params.scoop_cents ?? 30.0;
+            this.updateValueDisplay('scoop', params.scoop_cents ?? 30.0);
+        }
+        if (this.sliders.finalIntonation) {
+            this.sliders.finalIntonation.value = params.final_drop_cents ?? -20.0;
+            this.updateValueDisplay('finalIntonation', params.final_drop_cents ?? -20.0);
+        }
+        if (this.sliders.overshoot) {
+            this.sliders.overshoot.value = params.overshoot_cents ?? 15.0;
+            this.updateValueDisplay('overshoot', params.overshoot_cents ?? 15.0);
+        }
+        if (this.sliders.timingBias) {
+            this.sliders.timingBias.value = params.timing_bias_ms ?? 0.0;
+            this.updateValueDisplay('timingBias', params.timing_bias_ms ?? 0.0);
+        }
+
+        // Update emotional state chip
+        if (params.emotional_state) {
+            document.querySelectorAll('.emotion-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.emotion === params.emotional_state);
+            });
+        }
+
+        // Research Lab params
+        if (this.sliders.phonationIntensity) {
+            this.sliders.phonationIntensity.value = (params.phonation_intensity ?? 0.5) * 100;
+            this.updateValueDisplay('phonationIntensity', (params.phonation_intensity ?? 0.5) * 100);
+        }
+        if (this.sliders.jitterRate) {
+            this.sliders.jitterRate.value = params.jitter_rate_hz ?? 10.0;
+            this.updateValueDisplay('jitterRate', params.jitter_rate_hz ?? 10.0);
+        }
+        if (this.sliders.driftRate) {
+            this.sliders.driftRate.value = params.drift_rate_hz ?? 0.5;
+            this.updateValueDisplay('driftRate', params.drift_rate_hz ?? 0.5);
+        }
+        if (this.sliders.iuDuration) {
+            this.sliders.iuDuration.value = params.iu_duration_s ?? 1.6;
+            this.updateValueDisplay('iuDuration', params.iu_duration_s ?? 1.6);
+        }
+        if (this.sliders.hnr) {
+            this.sliders.hnr.value = params.hnr_target_db ?? 20.0;
+            this.updateValueDisplay('hnr', params.hnr_target_db ?? 20.0);
+        }
+        if (this.sliders.spectralTilt) {
+            this.sliders.spectralTilt.value = params.spectral_tilt_db ?? -12.0;
+            this.updateValueDisplay('spectralTilt', params.spectral_tilt_db ?? -12.0);
+        }
+
+        // Update phonation type chip
+        if (params.phonation_type) {
+            document.querySelectorAll('.phonation-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.phonation === params.phonation_type);
+            });
+        }
+
         this.updateVoiceDescription();
     }
 
@@ -565,6 +679,38 @@ class VoiceStudio {
             case 'pitchShift':
                 display.textContent = `${value > 0 ? '+' : ''}${Math.round(value)} st`;
                 break;
+            // Vocology params
+            case 'scoop':
+                display.textContent = `${Math.round(value)} ct`;
+                break;
+            case 'finalIntonation':
+                display.textContent = `${value > 0 ? '+' : ''}${Math.round(value)} ct`;
+                break;
+            case 'overshoot':
+                display.textContent = `${Math.round(value)} ct`;
+                break;
+            case 'timingBias':
+                display.textContent = `${value > 0 ? '+' : ''}${Math.round(value)} ms`;
+                break;
+            // Research Lab params
+            case 'phonationIntensity':
+                display.textContent = `${Math.round(value)}%`;
+                break;
+            case 'jitterRate':
+                display.textContent = `${Math.round(value)} Hz`;
+                break;
+            case 'driftRate':
+                display.textContent = `${value.toFixed(1)} Hz`;
+                break;
+            case 'iuDuration':
+                display.textContent = `${value.toFixed(1)}s`;
+                break;
+            case 'hnr':
+                display.textContent = `${Math.round(value)} dB`;
+                break;
+            case 'spectralTilt':
+                display.textContent = `${Math.round(value)} dB/oct`;
+                break;
         }
     }
 
@@ -590,7 +736,19 @@ class VoiceStudio {
             // Advanced
             shimmer: 'shimmer_percent',
             breathVol: 'breath_volume_db',
-            pitchShift: 'pitch_shift_semitones'
+            pitchShift: 'pitch_shift_semitones',
+            // Vocology
+            scoop: 'scoop_cents',
+            finalIntonation: 'final_drop_cents',
+            overshoot: 'overshoot_cents',
+            timingBias: 'timing_bias_ms',
+            // Research Lab
+            phonationIntensity: 'phonation_intensity',
+            jitterRate: 'jitter_rate_hz',
+            driftRate: 'drift_rate_hz',
+            iuDuration: 'iu_duration_s',
+            hnr: 'hnr_target_db',
+            spectralTilt: 'spectral_tilt_db'
         };
 
         const paramName = paramMap[key];
@@ -602,6 +760,43 @@ class VoiceStudio {
     onParamsAdjusted(data) {
         this.updateParams(data.current_params);
         this.updateUndoRedoButtons(data.can_undo, data.can_redo);
+    }
+
+    // Set emotional state preset (Vocology)
+    setEmotionalState(emotion) {
+        if (!this.sessionId) {
+            this.showToast('Start a session first', 'warning');
+            return;
+        }
+
+        this.params.emotional_state = emotion;
+        this.send('studio_adjust', { emotional_state: emotion });
+
+        // Emotional states auto-adjust certain parameters based on vocology research
+        const emotionPresets = {
+            neutral: { jitter_percent: 0.5, timing_bias_ms: 0 },
+            excited: { jitter_percent: 0.7, timing_bias_ms: -10, pitch_drift_cents: 12 },
+            calm: { jitter_percent: 0.3, timing_bias_ms: 5, pitch_drift_cents: 6 },
+            tired: { jitter_percent: 0.4, timing_bias_ms: 15, final_drop_cents: 35 },
+            confident: { jitter_percent: 0.4, timing_bias_ms: -5, pitch_drift_cents: 8 },
+            intimate: { jitter_percent: 0.3, breath_intensity: 0.25, final_drop_cents: 15 }
+        };
+
+        if (emotionPresets[emotion]) {
+            // Send batch adjustment
+            this.send('studio_adjust', emotionPresets[emotion]);
+        }
+    }
+
+    // Set phonation type (Research Lab)
+    setPhonationType(phonation) {
+        if (!this.sessionId) {
+            this.showToast('Start a session first', 'warning');
+            return;
+        }
+
+        this.params.phonation_type = phonation;
+        this.send('studio_adjust', { phonation_type: phonation });
     }
 
     resetParams() {

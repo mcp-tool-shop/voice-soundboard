@@ -614,6 +614,221 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Vocology Section (Voice Science) -->
+                    <div class="card-section vocology-section collapsed" id="vocology-params">
+                        <div class="section-header clickable" onclick="toggleSection('vocology-params')">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                Vocology
+                            </h3>
+                            <span class="badge badge-science">SCIENCE</span>
+                            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </div>
+                        <div class="section-body vocology-body">
+                            <p class="section-intro">Voice science parameters for natural humanization</p>
+
+                            <!-- Emotional State Preset -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Emotional State</label>
+                                </div>
+                                <div class="emotion-chips">
+                                    <button class="emotion-chip active" data-emotion="neutral">Neutral</button>
+                                    <button class="emotion-chip" data-emotion="excited">Excited</button>
+                                    <button class="emotion-chip" data-emotion="calm">Calm</button>
+                                    <button class="emotion-chip" data-emotion="tired">Tired</button>
+                                    <button class="emotion-chip" data-emotion="confident">Confident</button>
+                                    <button class="emotion-chip" data-emotion="intimate">Intimate</button>
+                                </div>
+                            </div>
+
+                            <!-- Pitch Scooping -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Pitch Scooping</label>
+                                    <span id="scoop-value" class="param-value">30 ct</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">None</span>
+                                    <input type="range" id="param-scoop" class="slider" min="0" max="60" step="5" value="30" data-fine-step="1">
+                                    <span class="param-max">Strong</span>
+                                </div>
+                                <span class="param-hint">Natural pitch slide into notes</span>
+                            </div>
+
+                            <!-- Phrase-Final Intonation -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Phrase Ending</label>
+                                    <span id="final-intonation-value" class="param-value">-20 ct</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">Drop</span>
+                                    <input type="range" id="param-final-intonation" class="slider" min="-40" max="40" step="5" value="-20" data-fine-step="1">
+                                    <span class="param-max">Rise</span>
+                                </div>
+                                <span class="param-hint">Declarative (drop) vs question (rise)</span>
+                            </div>
+
+                            <!-- Pitch Overshoot -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Pitch Overshoot</label>
+                                    <span id="overshoot-value" class="param-value">15 ct</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">None</span>
+                                    <input type="range" id="param-overshoot" class="slider" min="0" max="30" step="5" value="15" data-fine-step="1">
+                                    <span class="param-max">Expressive</span>
+                                </div>
+                                <span class="param-hint">Brief pitch overshoot on stressed words</span>
+                            </div>
+
+                            <!-- Timing Bias -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Timing Bias</label>
+                                    <span id="timing-bias-value" class="param-value">0 ms</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">Laid-back</span>
+                                    <input type="range" id="param-timing-bias" class="slider" min="-20" max="20" step="2" value="0" data-fine-step="1">
+                                    <span class="param-max">Ahead</span>
+                                </div>
+                                <span class="param-hint">Confident = ahead, tired = behind</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Research Lab Section (Expert-level) -->
+                    <div class="card-section research-section collapsed" id="research-params">
+                        <div class="section-header clickable" onclick="toggleSection('research-params')">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14.5 10c0 1.5-1 2.5-2.5 2.5s-2.5-1-2.5-2.5V4a2.5 2.5 0 0 1 5 0v6z"/>
+                                    <path d="M8.5 10.5v.5a3.5 3.5 0 1 0 7 0v-.5"/>
+                                    <path d="M6 13v2a6 6 0 0 0 12 0v-2"/>
+                                    <line x1="12" y1="22" x2="12" y2="19"/>
+                                </svg>
+                                Research Lab
+                            </h3>
+                            <span class="badge badge-expert">EXPERT</span>
+                            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </div>
+                        <div class="section-body research-body">
+                            <p class="section-intro">Acoustic research parameters (use with care)</p>
+
+                            <!-- Phonation Type -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Phonation Type</label>
+                                </div>
+                                <div class="phonation-chips">
+                                    <button class="phonation-chip active" data-phonation="modal" title="Normal voice">Modal</button>
+                                    <button class="phonation-chip" data-phonation="breathy" title="Soft, airy">Breathy</button>
+                                    <button class="phonation-chip" data-phonation="creaky" title="Vocal fry">Creaky</button>
+                                    <button class="phonation-chip" data-phonation="harsh" title="Tense, pressed">Harsh</button>
+                                </div>
+                            </div>
+
+                            <!-- Phonation Intensity -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Phonation Intensity</label>
+                                    <span id="phonation-intensity-value" class="param-value">50%</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">Subtle</span>
+                                    <input type="range" id="param-phonation-intensity" class="slider" min="0" max="100" step="10" value="50" data-fine-step="5">
+                                    <span class="param-max">Strong</span>
+                                </div>
+                            </div>
+
+                            <!-- Jitter Rate -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Jitter Rate</label>
+                                    <span id="jitter-rate-value" class="param-value">10 Hz</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">Slow</span>
+                                    <input type="range" id="param-jitter-rate" class="slider" min="5" max="20" step="1" value="10" data-fine-step="0.5">
+                                    <span class="param-max">Fast</span>
+                                </div>
+                                <span class="param-hint">Cycle-to-cycle pitch variation rate</span>
+                            </div>
+
+                            <!-- Drift Rate -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Drift Rate</label>
+                                    <span id="drift-rate-value" class="param-value">0.5 Hz</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">Stable</span>
+                                    <input type="range" id="param-drift-rate" class="slider" min="0.1" max="1.5" step="0.1" value="0.5" data-fine-step="0.05">
+                                    <span class="param-max">Wandering</span>
+                                </div>
+                                <span class="param-hint">Phrase-level pitch wandering speed</span>
+                            </div>
+
+                            <!-- Intonation Unit (1.6s Rhythm) -->
+                            <div class="param-group rhythm-group">
+                                <div class="param-header">
+                                    <label class="param-label">Rhythm Unit</label>
+                                    <span id="iu-value" class="param-value">1.6s</span>
+                                    <span class="param-info" title="Universal 1.6-second rhythm found in speech across all cultures (2024 neuroscience research)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">1.0s</span>
+                                    <input type="range" id="param-iu-duration" class="slider slider-rhythm" min="1.0" max="2.5" step="0.1" value="1.6" data-fine-step="0.05">
+                                    <span class="param-max">2.5s</span>
+                                </div>
+                                <span class="param-hint">Natural phrase rhythm (1.6s = universal default)</span>
+                            </div>
+
+                            <!-- HNR Target -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Voice Clarity (HNR)</label>
+                                    <span id="hnr-value" class="param-value">20 dB</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">Noisy</span>
+                                    <input type="range" id="param-hnr" class="slider" min="5" max="30" step="1" value="20" data-fine-step="0.5">
+                                    <span class="param-max">Clear</span>
+                                </div>
+                                <span class="param-hint">Harmonic-to-Noise Ratio (healthy: 10-12+ dB)</span>
+                            </div>
+
+                            <!-- Spectral Tilt -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Spectral Tilt</label>
+                                    <span id="spectral-tilt-value" class="param-value">-12 dB/oct</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">Bright</span>
+                                    <input type="range" id="param-spectral-tilt" class="slider" min="-20" max="-4" step="1" value="-12" data-fine-step="0.5">
+                                    <span class="param-max">Dark</span>
+                                </div>
+                                <span class="param-hint">High frequency roll-off (breathy = steep)</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </aside>
         </main>

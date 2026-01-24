@@ -716,14 +716,26 @@ class VoiceWebSocketServer:
             # Extract parameter changes
             param_changes = {}
             valid_params = [
+                # Basic params
                 "formant_ratio", "breath_intensity", "breath_volume_db",
                 "jitter_percent", "shimmer_percent", "pitch_drift_cents",
-                "timing_variation_ms", "speed_factor", "pitch_shift_semitones"
+                "timing_variation_ms", "speed_factor", "pitch_shift_semitones",
+                # Vocology params
+                "scoop_cents", "final_drop_cents", "overshoot_cents", "timing_bias_ms",
+                # Research Lab params
+                "phonation_intensity", "jitter_rate_hz", "drift_rate_hz",
+                "iu_duration_s", "hnr_target_db", "spectral_tilt_db"
             ]
+            # String params that shouldn't be converted to float
+            string_params = ["emotional_state", "phonation_type"]
 
             for key in valid_params:
                 if key in params:
                     param_changes[key] = float(params[key])
+
+            for key in string_params:
+                if key in params:
+                    param_changes[key] = str(params[key])
 
             if not param_changes:
                 await self._send_error(ws, "studio_adjust", "No valid parameters provided", request_id)

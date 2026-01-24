@@ -1392,6 +1392,175 @@ body {
     }
 }
 
+/* ===== Vocology & Research Lab Sections ===== */
+
+/* Science Badge */
+.badge-science {
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    color: white;
+}
+
+/* Expert Badge */
+.badge-expert {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: white;
+}
+
+/* Section intro text */
+.section-intro {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-md);
+    font-style: italic;
+}
+
+/* Parameter hints */
+.param-hint {
+    display: block;
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+/* Parameter info icon */
+.param-info {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: var(--spacing-xs);
+    color: var(--text-tertiary);
+    cursor: help;
+}
+
+.param-info:hover {
+    color: var(--accent-primary);
+}
+
+/* Emotion Chips */
+.emotion-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+}
+
+.emotion-chip {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.emotion-chip:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+    border-color: var(--accent-primary);
+}
+
+.emotion-chip.active {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+}
+
+/* Phonation Chips */
+.phonation-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+}
+
+.phonation-chip {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.phonation-chip:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+    border-color: var(--accent-secondary);
+}
+
+.phonation-chip.active {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: white;
+    border-color: transparent;
+}
+
+/* Vocology Section Styling */
+.vocology-section .section-header h3 {
+    color: var(--accent-primary);
+}
+
+.vocology-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Research Section Styling */
+.research-section .section-header h3 {
+    color: #f59e0b;
+}
+
+.research-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Rhythm Group Highlight */
+.rhythm-group {
+    padding: var(--spacing-sm);
+    background: rgba(99, 102, 241, 0.05);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.rhythm-group .param-label {
+    color: var(--accent-primary);
+}
+
+/* Rhythm Slider Track - special styling for 1.6s marker */
+.slider-rhythm {
+    position: relative;
+}
+
+/* Custom slider track for rhythm (show 1.6s mark) */
+.slider-rhythm::-webkit-slider-runnable-track {
+    background: linear-gradient(
+        to right,
+        var(--bg-primary) 0%,
+        var(--bg-primary) 38%,
+        var(--accent-primary) 38%,
+        var(--accent-primary) 42%,
+        var(--bg-primary) 42%,
+        var(--bg-primary) 100%
+    );
+    height: 6px;
+    border-radius: var(--radius-full);
+}
+
+/* Vocology/Research Closed State Header Color */
+.vocology-section.collapsed .section-header {
+    border-left: 3px solid var(--accent-primary);
+}
+
+.research-section.collapsed .section-header {
+    border-left: 3px solid #f59e0b;
+}
+
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
     width: 8px;
