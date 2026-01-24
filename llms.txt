@@ -1,0 +1,101 @@
+# Voice Soundboard
+
+> AI-powered voice synthesis with natural language control for AI assistants
+
+## Overview
+
+Voice Soundboard gives AI agents expressive, human-like voices with 54+ voices, 19 emotions, real-time streaming, voice cloning, and multi-speaker dialogue. Control speech style with natural language like "warmly and cheerfully".
+
+## Quick Start
+
+```bash
+pip install voice-soundboard
+
+# Download models
+mkdir models && cd models
+curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+```
+
+```python
+from voice_soundboard import VoiceEngine, play_audio
+
+engine = VoiceEngine()
+result = engine.speak("Hello!", style="warmly and cheerfully")
+play_audio(result.audio_path)
+```
+
+## Installation Extras
+
+| Extra | Description |
+|-------|-------------|
+| `[websocket]` | WebSocket server |
+| `[web]` | Mobile web UI |
+| `[mcp]` | MCP server (40+ tools) |
+| `[chatterbox]` | Paralinguistic tags, 23 languages |
+| `[f5tts]` | F5-TTS DiT voice cloning |
+| `[all]` | Everything |
+
+## Core API
+
+### engine.speak(text, **kwargs)
+Generate speech from text.
+- `text`: Text to speak
+- `style`: Natural language style ("warmly", "excitedly", "like a narrator")
+- `voice`: Voice ID (54+ options)
+- `emotion`: Emotion preset (19 options)
+- Returns: AudioResult with path and metadata
+
+### engine.speak_dialogue(script, **kwargs)
+Generate multi-speaker dialogue.
+- `script`: Script with speaker tags `[S1:alice]`, `[S2:bob]`
+- `voices`: Optional voice assignments
+- Returns: Combined audio file
+
+### engine.clone_voice(audio_path, voice_id)
+Clone a voice from reference audio (3-10 seconds).
+- `audio_path`: Reference audio file
+- `voice_id`: ID for the cloned voice
+- Returns: Voice profile
+
+### engine.speak_realtime(text, **kwargs)
+Stream speech with real-time playback (<100ms latency).
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **54+ Voices** | American, British, Japanese, Mandarin accents |
+| **19 Emotions** | happy, sad, angry, excited, calm, and more |
+| **Paralinguistic Tags** | `[laugh]`, `[sigh]`, `[gasp]` - natural sounds |
+| **23 Languages** | AR, DA, DE, EN, ES, FI, FR, and more |
+| **Voice Cloning** | Clone from 3-10 seconds of audio |
+| **F5-TTS** | DiT-based zero-shot cloning |
+| **Real-time Streaming** | Sub-100ms latency |
+| **MCP Integration** | 40+ tools for AI agents |
+
+## MCP Server
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "voice-soundboard": {
+      "command": "python",
+      "args": ["-m", "voice_soundboard.mcp"]
+    }
+  }
+}
+```
+
+## Links
+
+- Repository: https://github.com/mcp-tool-shop/voice-soundboard
+- PyPI: https://pypi.org/project/voice-soundboard/
+- Documentation: https://github.com/mcp-tool-shop/voice-soundboard#readme
+- Issues: https://github.com/mcp-tool-shop/voice-soundboard/issues
+
+## License
+
+MIT License
