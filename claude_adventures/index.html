@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Creative Lab</title>
+    <style>
+        :root {
+            --bg-dark: #0a0a1a;
+            --bg-card: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.08);
+            --text: #e8e8f0;
+            --text-dim: #888899;
+            --accent-1: #ff6b6b;
+            --accent-2: #feca57;
+            --accent-3: #48dbfb;
+            --accent-4: #ff9ff3;
+            --accent-5: #1dd1a1;
+            --accent-6: #5f27cd;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(236, 72, 153, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.08) 0%, transparent 50%);
+            animation: bgPulse 20s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-2%, -2%) rotate(1deg); }
+            66% { transform: translate(2%, 1%) rotate(-1deg); }
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 30px 20px 20px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-3), var(--accent-4), var(--accent-1));
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease infinite;
+            letter-spacing: -1px;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        header p {
+            color: var(--text-dim);
+            margin-top: 8px;
+            font-size: 1rem;
+        }
+
+        /* Main layout */
+        main {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 16px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Card base */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            flex: 1 1 350px;
+            min-width: 320px;
+        }
+
+        .card:hover {
+            border-color: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h2 .icon {
+            font-size: 1.4rem;
+        }
+
+        /* ========== PIXEL ART CANVAS ========== */
+        #pixel-grid {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 1px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            padding: 3px;
+            aspect-ratio: 1;
+        }
+
+        .pixel {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.05);
+            border-radius: 1px;
+            cursor: pointer;
+            transition: background 0.1s, transform 0.1s;
+        }
+
+        .pixel:hover {
+            transform: scale(1.15);
+            z-index: 1;
+        }
+
+        .palette {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .color-swatch {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-swatch:hover, .color-swatch.active {
+            transform: scale(1.2);
+            border-color: white;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .pixel-tools {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+
+        .pixel-tools button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .pixel-tools button:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* ========== SYNTH PAD ========== */
+        #synth-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .synth-pad {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(0,0,0,0.7);
+            transition: all 0.15s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .synth-pad::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .synth-pad:hover::after {
+            opacity: 1;
+        }
+
+        .synth-pad:active, .synth-pad.playing {
+            transform: scale(0.95);
+            box-shadow: 0 0 30px currentColor;
+        }
+
+        /* ========== PARTICLE WORLD ========== */
+        #particle-canvas {
+            width: 100%;
+            height: 220px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            cursor: crosshair;
+        }
+
+        .particle-modes {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .particle-mode {
+            padding: 6px 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .particle-mode:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .particle-mode.active {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        /* ========== STORY BUILDER ========== */
+        .story-canvas {
+            min-height: 70px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 1.8rem;
+            text-align: center;
+            letter-spacing: 6px;
+            line-height: 1.6;
+            word-break: break-all;
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            margin-top: 12px;
+        }
+
+        .emoji-btn {
+            aspect-ratio: 1;
+            border: none;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .emoji-btn:hover {
+            background: rgba(255,255,255,0.15);
+            transform: scale(1.1);
+        }
+
+        /* ========== PATTERN QUEST ========== */
+        .pattern-display {
+            text-align: center;
+            font-size: 2.2rem;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            letter-spacing: 12px;
+            margin-bottom: 15px;
+        }
+
+        .pattern-choices {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pattern-choice {
+            width: 50px;
+            height: 50px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pattern-choice:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.4);
+            transform: scale(1.1);
+        }
+
+        #pattern-feedback {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 1rem;
+            min-height: 24px;
+        }
+
+        /* ========== MOOD LABORATORY ========== */
+        .mood-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .mood-slider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mood-slider label {
+            width: 70px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .mood-slider input[type="range"] {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .mood-slider input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-3);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-3);
+        }
+
+        #mood-output {
+            text-align: center;
+            font-size: 4rem;
+            padding: 10px;
+            transition: transform 0.3s;
+        }
+
+        /* ========== CLICK COUNTER GAME ========== */
+        .click-game {
+            text-align: center;
+        }
+
+        #click-target {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-4));
+            cursor: pointer;
+            font-size: 2rem;
+            color: white;
+            margin: 15px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+            box-shadow: 0 10px 30px rgba(255,107,107,0.3);
+        }
+
+        #click-target:hover {
+            transform: scale(1.05);
+        }
+
+        #click-target:active {
+            transform: scale(0.95);
+        }
+
+        #click-score {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-2);
+        }
+
+        #click-cps {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        /* ========== ACTIVITY LOG ========== */
+        #activity-log {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 280px;
+            max-height: 200px;
+            background: rgba(10, 10, 26, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            z-index: 100;
+        }
+
+        #activity-log h3 {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #activity-log h3::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--accent-5);
+            border-radius: 50%;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        #activity-entries {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .activity-entry {
+            font-size: 0.8rem;
+            padding: 6px 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            animation: slideIn 0.3s ease;
+            border-left: 2px solid var(--accent-3);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .activity-entry .time {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            main {
+                padding: 10px;
+                gap: 12px;
+            }
+
+            .card {
+                min-width: 280px;
+            }
+
+            #activity-log {
+                width: calc(100% - 20px);
+                left: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <header>
+        <h1>Claude Creative Lab</h1>
+        <p>An interactive playground for AI exploration</p>
+    </header>
+
+    <main>
+        <!-- Pixel Art -->
+        <section class="card" id="card-pixel">
+            <h2><span class="icon">🎨</span> Pixel Canvas</h2>
+            <div id="pixel-grid"></div>
+            <div class="palette" id="palette"></div>
+            <div class="pixel-tools">
+                <button onclick="clearPixels()">Clear</button>
+                <button onclick="randomFill()">Random</button>
+            </div>
+        </section>
+
+        <!-- Synth Pads -->
+        <section class="card" id="card-synth">
+            <h2><span class="icon">🎹</span> Synth Pads</h2>
+            <div id="synth-grid"></div>
+        </section>
+
+        <!-- Particle World -->
+        <section class="card" id="card-particles">
+            <h2><span class="icon">✨</span> Particle World</h2>
+            <canvas id="particle-canvas"></canvas>
+            <div class="particle-modes">
+                <button class="particle-mode active" data-mode="stars">Stars</button>
+                <button class="particle-mode" data-mode="fire">Fire</button>
+                <button class="particle-mode" data-mode="snow">Snow</button>
+                <button class="particle-mode" data-mode="matrix">Matrix</button>
+                <button class="particle-mode" data-mode="confetti">Confetti</button>
+            </div>
+        </section>
+
+        <!-- Story Builder -->
+        <section class="card" id="card-story">
+            <h2><span class="icon">📖</span> Story Builder</h2>
+            <div class="story-canvas" id="story-canvas">Once upon a time...</div>
+            <div class="emoji-grid" id="emoji-grid"></div>
+            <div class="pixel-tools" style="margin-top:10px">
+                <button onclick="clearStory()">New Story</button>
+                <button onclick="undoStory()">Undo</button>
+            </div>
+        </section>
+
+        <!-- Pattern Quest -->
+        <section class="card" id="card-pattern">
+            <h2><span class="icon">🧩</span> Pattern Quest</h2>
+            <div class="pattern-display" id="pattern-display"></div>
+            <div class="pattern-choices" id="pattern-choices"></div>
+            <div id="pattern-feedback"></div>
+            <div class="pixel-tools" style="margin-top:10px">
+                <button onclick="newPattern()">New Puzzle</button>
+            </div>
+        </section>
+
+        <!-- Mood Lab -->
+        <section class="card" id="card-mood">
+            <h2><span class="icon">🎭</span> Mood Laboratory</h2>
+            <div class="mood-controls">
+                <div class="mood-slider">
+                    <label>Energy</label>
+                    <input type="range" id="mood-energy" min="0" max="100" value="50">
+                </div>
+                <div class="mood-slider">
+                    <label>Joy</label>
+                    <input type="range" id="mood-joy" min="0" max="100" value="50">
+                </div>
+                <div class="mood-slider">
+                    <label>Wonder</label>
+                    <input type="range" id="mood-wonder" min="0" max="100" value="50">
+                </div>
+                <div class="mood-slider">
+                    <label>Calm</label>
+                    <input type="range" id="mood-calm" min="0" max="100" value="50">
+                </div>
+            </div>
+            <div id="mood-output">🤔</div>
+        </section>
+
+        <!-- Click Game -->
+        <section class="card" id="card-click">
+            <h2><span class="icon">🎯</span> Click Challenge</h2>
+            <div class="click-game">
+                <div id="click-score">0</div>
+                <button id="click-target">👆</button>
+                <div id="click-cps">0.0 clicks/sec</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Activity Log -->
+    <div id="activity-log">
+        <h3>Activity Feed</h3>
+        <div id="activity-entries"></div>
+    </div>
+
+    <script>
+        // ========== ACTIVITY LOGGER ==========
+        const activityEntries = document.getElementById('activity-entries');
+
+        function logActivity(text) {
+            const entry = document.createElement('div');
+            entry.className = 'activity-entry';
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            entry.innerHTML = `<span class="time">${time}</span> ${text}`;
+            activityEntries.insertBefore(entry, activityEntries.firstChild);
+
+            // Keep only last 20 entries
+            while (activityEntries.children.length > 20) {
+                activityEntries.removeChild(activityEntries.lastChild);
+            }
+        }
+
+        // ========== PIXEL CANVAS ==========
+        const pixelGrid = document.getElementById('pixel-grid');
+        const palette = document.getElementById('palette');
+        const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#1dd1a1', '#5f27cd', '#ffffff', '#2d3436', '#fdcb6e', '#e17055', '#00cec9', '#6c5ce7'];
+        let currentColor = colors[0];
+        let isDrawing = false;
+
+        // Create pixels
+        for (let i = 0; i < 256; i++) {
+            const pixel = document.createElement('div');
+            pixel.className = 'pixel';
+            pixel.dataset.index = i;
+
+            pixel.addEventListener('mousedown', (e) => {
+                isDrawing = true;
+                pixel.style.background = currentColor;
+                logActivity(`Painted pixel ${i} with ${currentColor}`);
+            });
+
+            pixel.addEventListener('mouseenter', () => {
+                if (isDrawing) {
+                    pixel.style.background = currentColor;
+                }
+            });
+
+            pixelGrid.appendChild(pixel);
+        }
+
+        document.addEventListener('mouseup', () => isDrawing = false);
+
+        // Create palette
+        colors.forEach((color, i) => {
+            const swatch = document.createElement('div');
+            swatch.className = 'color-swatch' + (i === 0 ? ' active' : '');
+            swatch.style.background = color;
+            swatch.addEventListener('click', () => {
+                document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+                swatch.classList.add('active');
+                currentColor = color;
+                logActivity(`Selected color ${color}`);
+            });
+            palette.appendChild(swatch);
+        });
+
+        function clearPixels() {
+            document.querySelectorAll('.pixel').forEach(p => p.style.background = 'rgba(255,255,255,0.05)');
+            logActivity('Cleared pixel canvas');
+        }
+
+        function randomFill() {
+            document.querySelectorAll('.pixel').forEach(p => {
+                if (Math.random() > 0.6) {
+                    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                }
+            });
+            logActivity('Random pixel fill!');
+        }
+
+        // ========== SYNTH PADS ==========
+        const synthGrid = document.getElementById('synth-grid');
+        const padColors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#1dd1a1', '#a29bfe', '#fd79a8', '#00b894',
+                          '#e17055', '#74b9ff', '#55efc4', '#b2bec3', '#fdcb6e', '#6c5ce7', '#00cec9', '#fab1a0'];
+        const notes = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'B5', 'C6', 'D6'];
+        const frequencies = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25,
+                           587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50, 1174.66];
+
+        let audioCtx = null;
+
+        function playTone(freq, pad) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+
+            pad.classList.add('playing');
+            setTimeout(() => pad.classList.remove('playing'), 200);
+        }
+
+        for (let i = 0; i < 16; i++) {
+            const pad = document.createElement('button');
+            pad.className = 'synth-pad';
+            pad.style.background = padColors[i];
+            pad.textContent = notes[i];
+            pad.addEventListener('click', () => {
+                playTone(frequencies[i], pad);
+                logActivity(`Played note ${notes[i]}`);
+            });
+            synthGrid.appendChild(pad);
+        }
+
+        // ========== PARTICLE WORLD ==========
+        const particleCanvas = document.getElementById('particle-canvas');
+        const pCtx = particleCanvas.getContext('2d');
+        let particles = [];
+        let particleMode = 'stars';
+
+        function resizeParticleCanvas() {
+            particleCanvas.width = particleCanvas.offsetWidth;
+            particleCanvas.height = particleCanvas.offsetHeight;
+        }
+        resizeParticleCanvas();
+        window.addEventListener('resize', resizeParticleCanvas);
+
+        const particleConfigs = {
+            stars: { colors: ['#fff', '#ffd700', '#87ceeb'], gravity: 0, drag: 0.98, size: [1, 3] },
+            fire: { colors: ['#ff4500', '#ff6347', '#ffd700', '#ff8c00'], gravity: -0.15, drag: 0.96, size: [2, 5] },
+            snow: { colors: ['#fff', '#e0ffff', '#f0f8ff'], gravity: 0.05, drag: 0.99, size: [2, 4] },
+            matrix: { colors: ['#00ff00', '#00cc00', '#009900'], gravity: 0.2, drag: 0.95, size: [1, 2] },
+            confetti: { colors: ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#1dd1a1'], gravity: 0.08, drag: 0.97, size: [3, 6] }
+        };
+
+        class Particle {
+            constructor(x, y) {
+                const config = particleConfigs[particleMode];
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.color = config.colors[Math.floor(Math.random() * config.colors.length)];
+                this.size = config.size[0] + Math.random() * (config.size[1] - config.size[0]);
+                this.life = 100 + Math.random() * 50;
+                this.maxLife = this.life;
+            }
+
+            update() {
+                const config = particleConfigs[particleMode];
+                this.vy += config.gravity;
+                this.vx *= config.drag;
+                this.vy *= config.drag;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+                return this.life > 0;
+            }
+
+            draw() {
+                const alpha = this.life / this.maxLife;
+                pCtx.globalAlpha = alpha;
+                pCtx.fillStyle = this.color;
+                pCtx.beginPath();
+                pCtx.arc(this.x, this.y, this.size * alpha, 0, Math.PI * 2);
+                pCtx.fill();
+            }
+        }
+
+        particleCanvas.addEventListener('mousemove', (e) => {
+            const rect = particleCanvas.getBoundingClientRect();
+            for (let i = 0; i < 2; i++) {
+                particles.push(new Particle(e.clientX - rect.left, e.clientY - rect.top));
+            }
+        });
+
+        particleCanvas.addEventListener('click', (e) => {
+            const rect = particleCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            for (let i = 0; i < 50; i++) {
+                particles.push(new Particle(x, y));
+            }
+            logActivity(`${particleMode} burst at (${Math.round(x)}, ${Math.round(y)})`);
+        });
+
+        document.querySelectorAll('.particle-mode').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.particle-mode').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                particleMode = btn.dataset.mode;
+                logActivity(`Switched to ${particleMode} particles`);
+            });
+        });
+
+        function animateParticles() {
+            pCtx.fillStyle = 'rgba(0,0,0,0.15)';
+            pCtx.fillRect(0, 0, particleCanvas.width, particleCanvas.height);
+            pCtx.globalAlpha = 1;
+
+            particles = particles.filter(p => {
+                p.draw();
+                return p.update();
+            });
+
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // ========== STORY BUILDER ==========
+        const storyCanvas = document.getElementById('story-canvas');
+        const emojiGrid = document.getElementById('emoji-grid');
+        const storyEmojis = ['🌟', '🏠', '🌲', '🐱', '🐶', '🦊', '🐻', '🦁',
+                           '🌈', '☀️', '🌙', '⭐', '🔥', '💧', '🌊', '🏔️',
+                           '🎈', '🎁', '🎵', '❤️', '💎', '🗝️', '🚀', '👑'];
+        let storyContent = [];
+
+        storyEmojis.forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.className = 'emoji-btn';
+            btn.textContent = emoji;
+            btn.addEventListener('click', () => {
+                storyContent.push(emoji);
+                storyCanvas.textContent = storyContent.join(' ');
+                logActivity(`Added ${emoji} to story`);
+            });
+            emojiGrid.appendChild(btn);
+        });
+
+        function clearStory() {
+            storyContent = [];
+            storyCanvas.textContent = 'Once upon a time...';
+            logActivity('Started new story');
+        }
+
+        function undoStory() {
+            if (storyContent.length > 0) {
+                const removed = storyContent.pop();
+                storyCanvas.textContent = storyContent.length > 0 ? storyContent.join(' ') : 'Once upon a time...';
+                logActivity(`Removed ${removed} from story`);
+            }
+        }
+
+        // ========== PATTERN QUEST ==========
+        const patternDisplay = document.getElementById('pattern-display');
+        const patternChoices = document.getElementById('pattern-choices');
+        const patternFeedback = document.getElementById('pattern-feedback');
+        const shapes = ['●', '○', '■', '□', '▲', '△', '◆', '◇'];
+        let currentPatternAnswer = '';
+        let patternScore = 0;
+
+        function generatePattern() {
+            const patternTypes = [
+                () => { // Alternating AB
+                    const [a, b] = [shapes[0], shapes[1]];
+                    return { pattern: [a, b, a, b], answer: a };
+                },
+                () => { // ABC repeat
+                    const [a, b, c] = shapes.slice(0, 3);
+                    return { pattern: [a, b, c, a, b], answer: c };
+                },
+                () => { // AABB
+                    const [a, b] = [shapes[2], shapes[3]];
+                    return { pattern: [a, a, b, b, a], answer: a };
+                },
+                () => { // Growing: A, AA, AAA
+                    const a = shapes[4];
+                    return { pattern: [a, a, a, a, a, a], answer: a };
+                },
+                () => { // Mirror: ABCBA
+                    const [a, b, c] = shapes.slice(5, 8);
+                    return { pattern: [a, b, c, b], answer: a };
+                }
+            ];
+
+            const chosen = patternTypes[Math.floor(Math.random() * patternTypes.length)]();
+            currentPatternAnswer = chosen.answer;
+            patternDisplay.textContent = chosen.pattern.join(' ') + ' ?';
+            patternFeedback.textContent = '';
+
+            // Generate choices
+            patternChoices.innerHTML = '';
+            const choiceSet = new Set([chosen.answer]);
+            while (choiceSet.size < 4) {
+                choiceSet.add(shapes[Math.floor(Math.random() * shapes.length)]);
+            }
+
+            [...choiceSet].sort(() => Math.random() - 0.5).forEach(shape => {
+                const btn = document.createElement('button');
+                btn.className = 'pattern-choice';
+                btn.textContent = shape;
+                btn.addEventListener('click', () => checkPattern(shape));
+                patternChoices.appendChild(btn);
+            });
+        }
+
+        function checkPattern(answer) {
+            if (answer === currentPatternAnswer) {
+                patternScore++;
+                patternFeedback.innerHTML = `<span style="color:#1dd1a1">✓ Correct! Score: ${patternScore}</span>`;
+                logActivity(`Pattern solved! Score: ${patternScore}`);
+                setTimeout(generatePattern, 1200);
+            } else {
+                patternFeedback.innerHTML = `<span style="color:#ff6b6b">✗ Try again!</span>`;
+                logActivity(`Wrong pattern guess: ${answer}`);
+            }
+        }
+
+        function newPattern() {
+            generatePattern();
+            logActivity('New pattern puzzle');
+        }
+
+        generatePattern();
+
+        // ========== MOOD LABORATORY ==========
+        const moodOutput = document.getElementById('mood-output');
+        const moodSliders = ['mood-energy', 'mood-joy', 'mood-wonder', 'mood-calm'];
+
+        function updateMood() {
+            const energy = parseInt(document.getElementById('mood-energy').value);
+            const joy = parseInt(document.getElementById('mood-joy').value);
+            const wonder = parseInt(document.getElementById('mood-wonder').value);
+            const calm = parseInt(document.getElementById('mood-calm').value);
+
+            let emoji = '🤔';
+
+            if (energy > 70 && joy > 70) emoji = '🤩';
+            else if (joy > 70 && calm > 60) emoji = '😊';
+            else if (wonder > 70 && energy > 50) emoji = '🤯';
+            else if (wonder > 70) emoji = '😮';
+            else if (calm > 70 && joy > 50) emoji = '😌';
+            else if (calm > 70) emoji = '🧘';
+            else if (energy > 70) emoji = '⚡';
+            else if (energy < 30 && calm > 50) emoji = '😴';
+            else if (joy > 60) emoji = '😄';
+            else if (wonder > 50 && calm > 50) emoji = '🦉';
+
+            moodOutput.textContent = emoji;
+            moodOutput.style.transform = `scale(${0.8 + energy / 200})`;
+        }
+
+        moodSliders.forEach(id => {
+            const slider = document.getElementById(id);
+            slider.addEventListener('input', () => {
+                updateMood();
+                const name = id.replace('mood-', '');
+                logActivity(`${name}: ${slider.value}%`);
+            });
+        });
+
+        updateMood();
+
+        // ========== CLICK CHALLENGE ==========
+        const clickTarget = document.getElementById('click-target');
+        const clickScore = document.getElementById('click-score');
+        const clickCps = document.getElementById('click-cps');
+        let clicks = 0;
+        let clickTimes = [];
+
+        clickTarget.addEventListener('click', () => {
+            clicks++;
+            clickScore.textContent = clicks;
+
+            const now = Date.now();
+            clickTimes.push(now);
+            clickTimes = clickTimes.filter(t => now - t < 3000);
+
+            const cps = clickTimes.length / 3;
+            clickCps.textContent = `${cps.toFixed(1)} clicks/sec`;
+
+            if (clicks % 10 === 0) {
+                logActivity(`Click milestone: ${clicks}!`);
+            }
+        });
+
+        // Initial log
+        logActivity('Welcome to Claude Creative Lab!');
+    </script>
+</body>
+</html>

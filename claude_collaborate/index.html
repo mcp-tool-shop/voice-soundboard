@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Collaborate</title>
+    <style>
+        :root {
+            --bg-dark: #0d1117;
+            --bg-card: rgba(22, 27, 34, 0.8);
+            --bg-input: rgba(33, 38, 45, 0.9);
+            --border: rgba(48, 54, 61, 0.8);
+            --border-focus: #58a6ff;
+            --text: #e6edf3;
+            --text-dim: #8b949e;
+            --accent-claude: #cc785c;
+            --accent-user: #58a6ff;
+            --accent-success: #3fb950;
+            --accent-warning: #d29922;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-claude), #e8956a);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .logo h1 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, var(--accent-claude), #e8956a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .voice-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--bg-input);
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-warning);
+        }
+
+        .status-dot.connected {
+            background: var(--accent-success);
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Layout */
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar - Sandbox Environments */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-header h2 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .env-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .env-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .env-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .env-item.active {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+        }
+
+        .env-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .env-info h3 {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .env-info p {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* Main Content Area */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0; /* Important for flex children */
+        }
+
+        /* Sandbox Frame */
+        .sandbox-container {
+            flex: 1;
+            position: relative;
+            background: var(--bg-dark);
+            min-height: 300px; /* Minimum height for sandbox */
+            overflow: hidden;
+        }
+
+        .sandbox-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: var(--bg-dark);
+        }
+
+        /* Fallback placeholder when server is down */
+        .sandbox-fallback {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1f2e 100%);
+            color: var(--text-dim);
+            text-align: center;
+            padding: 40px;
+            z-index: 1;
+        }
+
+        .sandbox-fallback.visible {
+            display: flex;
+        }
+
+        .sandbox-fallback-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .sandbox-fallback h3 {
+            font-size: 1.2rem;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .sandbox-fallback p {
+            font-size: 0.9rem;
+            max-width: 400px;
+            line-height: 1.5;
+        }
+
+        .sandbox-fallback code {
+            background: rgba(255,255,255,0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .sandbox-fallback-retry {
+            margin-top: 20px;
+            padding: 10px 24px;
+            background: var(--accent-claude);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sandbox-fallback-retry:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(204, 120, 92, 0.3);
+        }
+
+        .sandbox-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .overlay-btn {
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 0.8rem;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+        }
+
+        .overlay-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Voice Panel */
+        .voice-panel {
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            padding: 10px 20px;
+            flex-shrink: 0;
+        }
+
+        .voice-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .voice-panel-header h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .voice-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .voice-btn:hover {
+            border-color: var(--border-focus);
+        }
+
+        .voice-btn.active {
+            background: var(--accent-claude);
+            border-color: var(--accent-claude);
+        }
+
+        /* Chat History */
+        .chat-history {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 12px;
+            padding: 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            display: none;
+        }
+
+        .chat-history.has-messages {
+            display: block;
+        }
+
+        .chat-message {
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .chat-message.claude {
+            background: rgba(204, 120, 92, 0.15);
+            border-left: 3px solid var(--accent-claude);
+        }
+
+        .chat-message.user {
+            background: rgba(88, 166, 255, 0.15);
+            border-left: 3px solid var(--accent-user);
+        }
+
+        .chat-message .sender {
+            font-weight: 600;
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+            color: var(--accent-claude);
+        }
+
+        .chat-message.user .sender {
+            color: var(--accent-user);
+        }
+
+        /* Collapsible Communication Panel */
+        .comm-panel {
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .comm-panel.collapsed .comm-panel-content {
+            display: none;
+        }
+
+        .comm-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .comm-panel-header:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .comm-panel-header h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+        }
+
+        .comm-panel-toggle {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .comm-panel-toggle:hover {
+            border-color: var(--accent-user);
+            color: var(--text);
+        }
+
+        .comm-panel-content {
+            padding: 10px 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* User Communication Panel */
+        .user-panel {
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            padding: 10px 20px;
+            flex-shrink: 0;
+        }
+
+        .user-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .user-panel-header h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-user);
+        }
+
+        .user-input-area {
+            display: flex;
+            gap: 12px;
+        }
+
+        .user-input-area textarea {
+            flex: 1;
+            padding: 10px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.9rem;
+            resize: none;
+            height: 40px;
+            font-family: inherit;
+        }
+
+        .user-input-area textarea:focus {
+            outline: none;
+            border-color: var(--accent-user);
+        }
+
+        .user-input-area textarea::placeholder {
+            color: var(--text-dim);
+        }
+
+        .mic-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-btn:hover {
+            border-color: var(--accent-user);
+            background: rgba(88, 166, 255, 0.1);
+        }
+
+        .mic-btn.recording {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+            animation: mic-pulse 1s ease infinite;
+        }
+
+        @keyframes mic-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+
+        .send-btn {
+            padding: 0 20px;
+            background: linear-gradient(135deg, var(--accent-user), #3b82f6);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(88, 166, 255, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Listening Indicator */
+        .listening-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #ef4444;
+        }
+
+        .listening-indicator.active {
+            display: flex;
+        }
+
+        /* Conversation Panel (combined view) */
+        .conversation-panel {
+            max-height: 120px;
+            overflow-y: auto;
+            margin: 8px 20px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .conversation-panel:empty {
+            display: none;
+        }
+
+        .conversation-panel:not(:empty) {
+            display: block;
+        }
+
+        .conversation-panel .chat-message {
+            margin-bottom: 8px;
+        }
+
+        .conversation-panel .chat-message:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-left: 8px;
+        }
+
+        /* Panel toggle for compact mode */
+        .panel-toggle {
+            display: flex;
+            gap: 8px;
+        }
+
+        .panel-toggle button {
+            padding: 4px 8px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .panel-toggle button:hover {
+            border-color: var(--accent-user);
+            color: var(--text);
+        }
+
+        .panel-toggle button.active {
+            background: var(--accent-user);
+            border-color: var(--accent-user);
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar {
+                width: 60px;
+            }
+
+            .env-info {
+                display: none;
+            }
+
+            .sidebar-header h2 {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">C</div>
+            <h1>Claude Collaborate</h1>
+        </div>
+        <div class="header-controls">
+            <div class="voice-status">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Environments</h2>
+            </div>
+            <div class="env-list">
+                <div class="env-item active" data-url="/studio" data-name="Voice Studio">
+                    <div class="env-icon" style="background: linear-gradient(135deg, #ec4899, #f472b6);">🎙️</div>
+                    <div class="env-info">
+                        <h3>Voice Studio</h3>
+                        <p>TTS controls</p>
+                    </div>
+                </div>
+                <div class="env-item" data-url="/adventures" data-name="Creative Lab">
+                    <div class="env-icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">🔬</div>
+                    <div class="env-info">
+                        <h3>Creative Lab</h3>
+                        <p>Interactive workspace</p>
+                    </div>
+                </div>
+                <div class="env-item" data-url="/collaborate/whiteboard.html" data-name="Whiteboard">
+                    <div class="env-icon" style="background: linear-gradient(135deg, #10b981, #34d399);">📝</div>
+                    <div class="env-info">
+                        <h3>Whiteboard</h3>
+                        <p>Draw & brainstorm</p>
+                    </div>
+                </div>
+                <div class="env-item" data-url="/collaborate/code-playground.html" data-name="Code Workshop">
+                    <div class="env-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">💻</div>
+                    <div class="env-info">
+                        <h3>Code Workshop</h3>
+                        <p>HTML/CSS/JS editor</p>
+                    </div>
+                </div>
+                <div class="env-item" data-url="/collaborate/chess.html" data-name="Chess Workshop">
+                    <div class="env-icon" style="background: linear-gradient(135deg, #8b7355, #a08060);">&#9818;</div>
+                    <div class="env-info">
+                        <h3>Chess Workshop</h3>
+                        <p>Strategy & tactics</p>
+                    </div>
+                </div>
+                <div class="env-item" data-url="/collaborate/capture-viewer.html" data-name="Capture Viewer">
+                    <div class="env-icon" style="background: linear-gradient(135deg, #06b6d4, #22d3ee);">&#128247;</div>
+                    <div class="env-info">
+                        <h3>Capture Viewer</h3>
+                        <p>Screenshots & recordings</p>
+                    </div>
+                </div>
+                <div class="env-item" data-url="/collaborate/github-toolkit.html" data-name="GitHub Toolkit">
+                    <div class="env-icon" style="background: linear-gradient(135deg, #171515, #333);">&#128025;</div>
+                    <div class="env-info">
+                        <h3>GitHub Toolkit</h3>
+                        <p>README & marketing</p>
+                    </div>
+                </div>
+                <div class="env-item" data-url="/collaborate/template.html" data-name="Add Environment">
+                    <div class="env-icon" style="background: linear-gradient(135deg, #a371f7, #c084fc);">+</div>
+                    <div class="env-info">
+                        <h3>Add Environment</h3>
+                        <p>Starter template</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="content-area">
+            <div class="sandbox-container">
+                <iframe id="sandbox-frame" class="sandbox-frame" src="http://localhost:8080/studio"></iframe>
+                <div class="sandbox-fallback" id="sandbox-fallback">
+                    <div class="sandbox-fallback-icon">🔌</div>
+                    <h3 id="fallback-title">Environment Offline</h3>
+                    <p id="fallback-message">The <strong id="fallback-env-name">Creative Lab</strong> server isn't running.<br>
+                    Start it with: <code id="fallback-command">python -m http.server 8765</code></p>
+                    <button class="sandbox-fallback-retry" onclick="retryConnection()">↻ Retry Connection</button>
+                </div>
+                <div class="sandbox-overlay">
+                    <button class="overlay-btn" onclick="refreshSandbox()">↻ Refresh</button>
+                    <button class="overlay-btn" onclick="openInNewTab()">↗ Open</button>
+                </div>
+            </div>
+
+            <!-- Collapsible Communication Panel -->
+            <div class="comm-panel collapsed" id="comm-panel">
+                <div class="comm-panel-header" onclick="toggleCommPanel()">
+                    <h3><span style="font-size:1.2rem;">💬</span> Communication <span id="comm-status" style="font-weight:normal;color:var(--text-dim);font-size:0.75rem;margin-left:8px;">• Bridge Connected</span></h3>
+                    <button class="comm-panel-toggle" id="comm-toggle">▲ Expand</button>
+                </div>
+                <div class="comm-panel-content">
+                    <!-- Conversation Display -->
+                    <div class="conversation-panel" id="conversation-panel" style="margin:0 0 12px 0;"></div>
+
+                    <!-- Message Input -->
+                    <div class="user-input-area">
+                        <textarea id="user-input" placeholder="Type your message to Claude... (Enter to send)"></textarea>
+                        <button class="mic-btn" id="mic-btn" onclick="toggleMic()" title="Hold to speak">🎤</button>
+                        <button class="send-btn" id="send-btn" onclick="sendUserMessage()">Send ➤</button>
+                    </div>
+                    <div class="listening-indicator" id="listening-indicator">🎤 Listening...</div>
+                    <p style="font-size:0.7rem;color:var(--text-dim);margin-top:6px;">Voice settings available in Voice Studio above</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Unified server - everything runs on port 8080
+        const VOICE_API = 'http://localhost:8080';
+        const WS_BRIDGE = 'ws://localhost:8080/ws';
+
+        // WebSocket connection for Claude Code bridge
+        let ws = null;
+        let wsConnected = false;
+        let wsReconnectAttempts = 0;
+
+        function connectWebSocket() {
+            try {
+                ws = new WebSocket(WS_BRIDGE);
+
+                ws.onopen = () => {
+                    wsConnected = true;
+                    wsReconnectAttempts = 0;
+                    console.log('WebSocket connected to Claude Code bridge');
+                    updateConnectionStatus();
+                };
+
+                ws.onclose = () => {
+                    wsConnected = false;
+                    updateConnectionStatus();
+                    // Reconnect after delay
+                    if (wsReconnectAttempts < 5) {
+                        wsReconnectAttempts++;
+                        setTimeout(connectWebSocket, 2000 * wsReconnectAttempts);
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    console.log('WebSocket error:', error);
+                    wsConnected = false;
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleWsMessage(data);
+                    } catch (e) {
+                        console.error('Failed to parse WebSocket message:', e);
+                    }
+                };
+            } catch (e) {
+                console.log('WebSocket connection failed:', e);
+                wsConnected = false;
+            }
+        }
+
+        function handleWsMessage(data) {
+            if (data.type === 'claude_response') {
+                // Claude sent a response - display it and optionally speak it
+                addToConversation('Claude', data.content, 'claude');
+                // Auto-speak if voice is ready
+                if (statusDot.classList.contains('connected')) {
+                    speakInput.value = data.content;
+                    speak();
+                }
+            } else if (data.type === 'connected') {
+                addToConversation('System', 'Connected to Claude Code bridge!', 'claude');
+            } else if (data.type === 'message_received') {
+                console.log('Message received by bridge:', data);
+            }
+        }
+
+        function sendToClaudeCode(text) {
+            if (ws && wsConnected) {
+                ws.send(JSON.stringify({
+                    type: 'user_message',
+                    content: text
+                }));
+                return true;
+            }
+            return false;
+        }
+
+        // Elements
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const conversationPanel = document.getElementById('conversation-panel');
+        const sandboxFrame = document.getElementById('sandbox-frame');
+        const sandboxFallback = document.getElementById('sandbox-fallback');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const micBtn = document.getElementById('mic-btn');
+        const listeningIndicator = document.getElementById('listening-indicator');
+
+        // Environment info for fallback messages (unified server on port 8080)
+        const envInfo = {
+            'Voice Studio': { cmd: 'python -m voice_soundboard.web_server', icon: '🎙️' },
+            'Creative Lab': { cmd: 'python -m voice_soundboard.web_server', icon: '🔬' },
+            'Whiteboard': { cmd: 'Served from /collaborate/ route', icon: '📝' },
+            'Code Workshop': { cmd: 'Served from /collaborate/ route', icon: '💻' },
+            'Chess Workshop': { cmd: 'Served from /collaborate/ route', icon: '♔' },
+            'Capture Viewer': { cmd: 'Served from /collaborate/ route', icon: '📷' },
+            'GitHub Toolkit': { cmd: 'Served from /collaborate/ route', icon: '🐙' }
+        };
+
+        let currentEnvName = 'Voice Studio';
+
+        // Check if iframe loaded successfully
+        function checkIframeLoad() {
+            // Hide fallback initially
+            sandboxFallback.classList.remove('visible');
+
+            // For external URLs, try to fetch to check if server is up
+            const url = sandboxFrame.src;
+            if (url.includes('localhost:8765') || url.includes('localhost:8080')) {
+                fetch(url, { mode: 'no-cors', cache: 'no-cache' })
+                    .then(() => {
+                        sandboxFallback.classList.remove('visible');
+                    })
+                    .catch(() => {
+                        showFallback();
+                    });
+            }
+        }
+
+        function showFallback() {
+            const info = envInfo[currentEnvName] || { cmd: 'Check server status', icon: '🔌' };
+            document.getElementById('fallback-env-name').textContent = currentEnvName;
+            document.getElementById('fallback-command').textContent = info.cmd;
+            document.querySelector('.sandbox-fallback-icon').textContent = info.icon;
+            sandboxFallback.classList.add('visible');
+        }
+
+        function retryConnection() {
+            sandboxFallback.classList.remove('visible');
+            sandboxFrame.src = sandboxFrame.src;
+            setTimeout(checkIframeLoad, 1000);
+        }
+
+        // Listen for iframe errors
+        sandboxFrame.addEventListener('error', showFallback);
+        sandboxFrame.addEventListener('load', () => {
+            // Check if it loaded an error page (can't directly check cross-origin)
+            setTimeout(checkIframeLoad, 500);
+        });
+
+        // Speech Recognition setup
+        let recognition = null;
+        let isListening = false;
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isListening = true;
+                micBtn.classList.add('recording');
+                listeningIndicator.classList.add('active');
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                micBtn.classList.remove('recording');
+                listeningIndicator.classList.remove('active');
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                userInput.value = transcript;
+
+                // Auto-send on final result
+                if (event.results[event.results.length - 1].isFinal) {
+                    setTimeout(() => sendUserMessage(), 300);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                isListening = false;
+                micBtn.classList.remove('recording');
+                listeningIndicator.classList.remove('active');
+            };
+        }
+
+        // Toggle microphone
+        function toggleMic() {
+            if (!recognition) {
+                alert('Speech recognition not supported in this browser. Try Chrome or Edge.');
+                return;
+            }
+
+            if (isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+
+        // Send user message
+        function sendUserMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            addToConversation('You', text, 'user');
+            userInput.value = '';
+
+            // Send via WebSocket to Claude Code bridge
+            const sentViaWs = sendToClaudeCode(text);
+
+            // Also copy to clipboard as fallback
+            navigator.clipboard.writeText(text).then(() => {
+                console.log('Message copied to clipboard' + (sentViaWs ? ' (also sent via WebSocket)' : ''));
+            }).catch(err => {
+                console.log('Failed to copy:', err);
+            });
+        }
+
+        // Update connection status display
+        function updateConnectionStatus() {
+            const voiceOk = statusDot.classList.contains('connected');
+            if (wsConnected && voiceOk) {
+                statusText.textContent = 'Bridge + Voice';
+            } else if (wsConnected) {
+                statusText.textContent = 'Bridge Ready';
+            } else if (voiceOk) {
+                statusText.textContent = 'Voice Only';
+            } else {
+                statusText.textContent = 'Disconnected';
+            }
+        }
+
+        // Check voice server connection
+        async function checkConnection() {
+            try {
+                const res = await fetch(`${VOICE_API}/health`);
+                if (res.ok) {
+                    statusDot.classList.add('connected');
+                    updateConnectionStatus();
+                    return true;
+                }
+            } catch (e) {
+                console.log('Voice server not available');
+            }
+            statusDot.classList.remove('connected');
+            updateConnectionStatus();
+            return false;
+        }
+
+        // Add message to conversation
+        function addToConversation(sender, text, type) {
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const msg = document.createElement('div');
+            msg.className = `chat-message ${type}`;
+            msg.innerHTML = `
+                <div class="sender">${sender}<span class="message-time">${time}</span></div>
+                <div class="message-text">${escapeHtml(text)}</div>
+            `;
+            conversationPanel.appendChild(msg);
+            conversationPanel.scrollTop = conversationPanel.scrollHeight;
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Toggle conversation visibility
+        function toggleConversation() {
+            const isHidden = conversationPanel.style.display === 'none';
+            conversationPanel.style.display = isHidden ? 'block' : 'none';
+        }
+
+        // Toggle communication panel (collapsed/expanded)
+        function toggleCommPanel() {
+            const panel = document.getElementById('comm-panel');
+            const toggle = document.getElementById('comm-toggle');
+            panel.classList.toggle('collapsed');
+            if (panel.classList.contains('collapsed')) {
+                toggle.textContent = '▲ Expand';
+            } else {
+                toggle.textContent = '▼ Collapse';
+            }
+        }
+
+        // Environment switching
+        document.querySelectorAll('.env-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.env-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                // Track current environment name for fallback messages
+                currentEnvName = item.dataset.name || 'Unknown';
+
+                const url = item.dataset.url;
+                if (url && url !== 'about:blank') {
+                    // Hide fallback before loading new environment
+                    sandboxFallback.classList.remove('visible');
+
+                    // For local routes on voice server
+                    if (url.startsWith('/')) {
+                        sandboxFrame.src = `http://localhost:8080${url}`;
+                    }
+                    // For local HTML files (whiteboard, etc)
+                    else if (url.endsWith('.html')) {
+                        sandboxFrame.src = url;
+                    }
+                    // For full URLs (playground on different port)
+                    else {
+                        sandboxFrame.src = url;
+                    }
+
+                    // Check if the new environment loaded successfully
+                    setTimeout(checkIframeLoad, 1500);
+                }
+            });
+        });
+
+        // Sandbox controls
+        function refreshSandbox() {
+            sandboxFrame.src = sandboxFrame.src;
+        }
+
+        function openInNewTab() {
+            window.open(sandboxFrame.src, '_blank');
+        }
+
+        // Keyboard shortcuts
+        speakInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                speak();
+            }
+        });
+
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendUserMessage();
+            }
+        });
+
+        // Hold-to-talk for mic button
+        micBtn.addEventListener('mousedown', () => {
+            if (recognition && !isListening) {
+                recognition.start();
+            }
+        });
+
+        micBtn.addEventListener('mouseup', () => {
+            // Let recognition finish naturally for better results
+        });
+
+        // Initialize
+        checkConnection();
+        setInterval(checkConnection, 10000);
+
+        // Connect to WebSocket bridge
+        connectWebSocket();
+
+        // Welcome message
+        setTimeout(() => {
+            addToConversation('System', 'Welcome to Claude Collaborate! Type a message or click the mic to speak.', 'claude');
+        }, 500);
+    </script>
+</body>
+</html>

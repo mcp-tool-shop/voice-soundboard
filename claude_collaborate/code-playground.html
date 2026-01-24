@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Workshop</title>
+    <style>
+        :root {
+            --bg-dark: #0d1117;
+            --bg-editor: #161b22;
+            --bg-panel: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-dim: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --orange: #d29922;
+            --red: #f85149;
+            --purple: #a371f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .title-icon {
+            font-size: 1.3rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-editor);
+            color: var(--text);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: var(--bg-panel);
+            border-color: var(--accent);
+        }
+
+        .btn-primary {
+            background: var(--green);
+            border-color: var(--green);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: #2ea043;
+            border-color: #2ea043;
+        }
+
+        /* Main Layout */
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Editor Panel */
+        .editors-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            min-width: 0;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab:hover {
+            color: var(--text);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .tab.active {
+            color: var(--text);
+            border-bottom-color: var(--accent);
+            background: var(--bg-editor);
+        }
+
+        .tab-icon {
+            font-size: 1rem;
+        }
+
+        .tab-icon.html { color: #e34c26; }
+        .tab-icon.css { color: #264de4; }
+        .tab-icon.js { color: #f0db4f; }
+
+        /* Editor */
+        .editor-container {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .editor-container.active {
+            display: flex;
+        }
+
+        .editor-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .line-numbers {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 50px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            padding: 12px 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-dim);
+            text-align: right;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .code-editor {
+            width: 100%;
+            height: 100%;
+            padding: 12px 12px 12px 62px;
+            background: var(--bg-editor);
+            border: none;
+            color: var(--text);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            tab-size: 2;
+        }
+
+        .code-editor::placeholder {
+            color: var(--text-dim);
+        }
+
+        /* Preview Panel */
+        .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .preview-header h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .preview-frame-container {
+            flex: 1;
+            background: white;
+            overflow: hidden;
+        }
+
+        #preview-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Console */
+        .console-panel {
+            height: 150px;
+            background: var(--bg-editor);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .console-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .console-header h4 {
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .console-output {
+            flex: 1;
+            padding: 8px 12px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+        }
+
+        .console-line {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .console-line.log { color: var(--text); }
+        .console-line.error { color: var(--red); }
+        .console-line.warn { color: var(--orange); }
+        .console-line.info { color: var(--accent); }
+
+        .console-line::before {
+            margin-right: 8px;
+            opacity: 0.5;
+        }
+
+        .console-line.log::before { content: '›'; }
+        .console-line.error::before { content: '✕'; color: var(--red); }
+        .console-line.warn::before { content: '⚠'; color: var(--orange); }
+        .console-line.info::before { content: 'ℹ'; color: var(--accent); }
+
+        /* Resizer */
+        .resizer {
+            width: 4px;
+            background: var(--border);
+            cursor: col-resize;
+            transition: background 0.2s;
+        }
+
+        .resizer:hover {
+            background: var(--accent);
+        }
+
+        /* Templates dropdown */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            min-width: 200px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            z-index: 100;
+            margin-top: 4px;
+        }
+
+        .dropdown.open .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .dropdown-item:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .dropdown-item:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+
+        /* Status bar */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 12px;
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="title">
+            <span class="title-icon">💻</span>
+            <span>Code Workshop</span>
+        </div>
+        <div class="header-actions">
+            <div class="dropdown" id="templates-dropdown">
+                <button class="btn" onclick="toggleDropdown()">
+                    📋 Templates
+                </button>
+                <div class="dropdown-content">
+                    <div class="dropdown-item" onclick="loadTemplate('blank')">Blank</div>
+                    <div class="dropdown-item" onclick="loadTemplate('hello')">Hello World</div>
+                    <div class="dropdown-item" onclick="loadTemplate('flexbox')">Flexbox Layout</div>
+                    <div class="dropdown-item" onclick="loadTemplate('animation')">CSS Animation</div>
+                    <div class="dropdown-item" onclick="loadTemplate('interactive')">Interactive Button</div>
+                    <div class="dropdown-item" onclick="loadTemplate('canvas')">Canvas Drawing</div>
+                </div>
+            </div>
+            <button class="btn" onclick="formatCode()">✨ Format</button>
+            <button class="btn" onclick="copyCode()">📋 Copy All</button>
+            <button class="btn btn-primary" onclick="runCode()">▶ Run</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Editors -->
+        <div class="editors-panel" id="editors-panel">
+            <div class="tabs">
+                <button class="tab active" data-tab="html">
+                    <span class="tab-icon html">◢</span> HTML
+                </button>
+                <button class="tab" data-tab="css">
+                    <span class="tab-icon css">◆</span> CSS
+                </button>
+                <button class="tab" data-tab="js">
+                    <span class="tab-icon js">{ }</span> JS
+                </button>
+            </div>
+
+            <div class="editor-container active" data-editor="html">
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="html-lines">1</div>
+                    <textarea class="code-editor" id="html-editor" placeholder="Write HTML here..." spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <div class="editor-container" data-editor="css">
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="css-lines">1</div>
+                    <textarea class="code-editor" id="css-editor" placeholder="Write CSS here..." spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <div class="editor-container" data-editor="js">
+                <div class="editor-wrapper">
+                    <div class="line-numbers" id="js-lines">1</div>
+                    <textarea class="code-editor" id="js-editor" placeholder="Write JavaScript here..." spellcheck="false"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="resizer" id="resizer"></div>
+
+        <!-- Preview -->
+        <div class="preview-panel" id="preview-panel">
+            <div class="preview-header">
+                <h3>👁️ Preview</h3>
+                <div class="preview-actions">
+                    <button class="btn" onclick="toggleConsole()">🖥️ Console</button>
+                    <button class="btn" onclick="openInNewTab()">↗ Open</button>
+                </div>
+            </div>
+            <div class="preview-frame-container">
+                <iframe id="preview-frame" sandbox="allow-scripts allow-modals"></iframe>
+            </div>
+            <div class="console-panel" id="console-panel">
+                <div class="console-header">
+                    <h4>🖥️ Console</h4>
+                    <button class="btn" onclick="clearConsole()" style="padding: 4px 8px; font-size: 0.75rem;">Clear</button>
+                </div>
+                <div class="console-output" id="console-output"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-item">
+            <span>Auto-run: On</span>
+        </div>
+        <div class="status-item">
+            <span id="char-count">0 characters</span>
+        </div>
+    </div>
+
+    <script>
+        // Elements
+        const htmlEditor = document.getElementById('html-editor');
+        const cssEditor = document.getElementById('css-editor');
+        const jsEditor = document.getElementById('js-editor');
+        const previewFrame = document.getElementById('preview-frame');
+        const consoleOutput = document.getElementById('console-output');
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.editor-container').forEach(e => e.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.querySelector(`[data-editor="${tabName}"]`).classList.add('active');
+            });
+        });
+
+        // Line numbers
+        function updateLineNumbers(editor, linesEl) {
+            const lines = editor.value.split('\n').length;
+            linesEl.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
+        }
+
+        // Sync scroll for line numbers
+        function syncScroll(editor, linesEl) {
+            linesEl.scrollTop = editor.scrollTop;
+        }
+
+        [
+            [htmlEditor, document.getElementById('html-lines')],
+            [cssEditor, document.getElementById('css-lines')],
+            [jsEditor, document.getElementById('js-lines')]
+        ].forEach(([editor, lines]) => {
+            editor.addEventListener('input', () => {
+                updateLineNumbers(editor, lines);
+                updateCharCount();
+                debouncedRun();
+            });
+            editor.addEventListener('scroll', () => syncScroll(editor, lines));
+            editor.addEventListener('keydown', handleTab);
+        });
+
+        // Tab key handling
+        function handleTab(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + '  ' + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 2;
+                this.dispatchEvent(new Event('input'));
+            }
+        }
+
+        // Debounced run
+        let runTimeout;
+        function debouncedRun() {
+            clearTimeout(runTimeout);
+            runTimeout = setTimeout(runCode, 500);
+        }
+
+        // Run code
+        function runCode() {
+            const html = htmlEditor.value;
+            const css = cssEditor.value;
+            const js = jsEditor.value;
+
+            // Clear console
+            consoleOutput.innerHTML = '';
+
+            // Create the preview document
+            const doc = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>${css}</style>
+</head>
+<body>
+    ${html}
+    <script>
+        // Override console methods to send to parent
+        const originalConsole = { ...console };
+        ['log', 'error', 'warn', 'info'].forEach(method => {
+            console[method] = (...args) => {
+                parent.postMessage({
+                    type: 'console',
+                    method,
+                    args: args.map(a => {
+                        try {
+                            return typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a);
+                        } catch {
+                            return String(a);
+                        }
+                    })
+                }, '*');
+                originalConsole[method](...args);
+            };
+        });
+
+        // Catch errors
+        window.onerror = (msg, url, line, col, error) => {
+            parent.postMessage({
+                type: 'console',
+                method: 'error',
+                args: [msg + ' (line ' + line + ')']
+            }, '*');
+        };
+
+        try {
+            ${js}
+        } catch (e) {
+            console.error(e.message);
+        }
+    <\/script>
+</body>
+</html>`;
+
+            previewFrame.srcdoc = doc;
+        }
+
+        // Listen for console messages from iframe
+        window.addEventListener('message', (e) => {
+            if (e.data.type === 'console') {
+                const line = document.createElement('div');
+                line.className = `console-line ${e.data.method}`;
+                line.textContent = e.data.args.join(' ');
+                consoleOutput.appendChild(line);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            }
+        });
+
+        // Templates
+        const templates = {
+            blank: { html: '', css: '', js: '' },
+            hello: {
+                html: `<div class="container">
+  <h1>Hello, World!</h1>
+  <p>Welcome to the Code Workshop</p>
+</div>`,
+                css: `.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: system-ui, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+h1 {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+p {
+  opacity: 0.8;
+}`,
+                js: `console.log('Hello from JavaScript!');`
+            },
+            flexbox: {
+                html: `<div class="flex-container">
+  <div class="box">1</div>
+  <div class="box">2</div>
+  <div class="box">3</div>
+  <div class="box">4</div>
+</div>`,
+                css: `body {
+  margin: 0;
+  min-height: 100vh;
+  background: #1a1a2e;
+}
+
+.flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.box {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #ff6b6b, #feca57);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  transition: transform 0.3s;
+}
+
+.box:hover {
+  transform: scale(1.1) rotate(5deg);
+}`,
+                js: `document.querySelectorAll('.box').forEach((box, i) => {
+  box.addEventListener('click', () => {
+    console.log('Clicked box', i + 1);
+  });
+});`
+            },
+            animation: {
+                html: `<div class="spinner"></div>
+<div class="pulse"></div>
+<div class="bounce"></div>`,
+                css: `body {
+  margin: 0;
+  min-height: 100vh;
+  background: #0a0a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #333;
+  border-top-color: #48dbfb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.pulse {
+  width: 60px;
+  height: 60px;
+  background: #ff6b6b;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+}
+
+.bounce {
+  width: 60px;
+  height: 60px;
+  background: #1dd1a1;
+  border-radius: 12px;
+  animation: bounce 0.6s ease infinite alternate;
+}
+
+@keyframes bounce {
+  to { transform: translateY(-30px); }
+}`,
+                js: `console.log('Animations are running!');`
+            },
+            interactive: {
+                html: `<button class="fancy-btn">
+  <span class="btn-text">Click Me!</span>
+  <span class="btn-count">0</span>
+</button>`,
+                css: `body {
+  margin: 0;
+  min-height: 100vh;
+  background: #1a1a2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fancy-btn {
+  padding: 20px 40px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.fancy-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+}
+
+.fancy-btn:active {
+  transform: scale(0.98);
+}
+
+.btn-count {
+  margin-left: 10px;
+  padding: 4px 12px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 20px;
+}
+
+.fancy-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255,255,255,0.3) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.fancy-btn:hover::after {
+  opacity: 1;
+}`,
+                js: `const btn = document.querySelector('.fancy-btn');
+const countEl = btn.querySelector('.btn-count');
+let count = 0;
+
+btn.addEventListener('click', () => {
+  count++;
+  countEl.textContent = count;
+  console.log('Button clicked! Count:', count);
+});
+
+btn.addEventListener('mousemove', (e) => {
+  const rect = btn.getBoundingClientRect();
+  btn.style.setProperty('--x', ((e.clientX - rect.left) / rect.width * 100) + '%');
+  btn.style.setProperty('--y', ((e.clientY - rect.top) / rect.height * 100) + '%');
+});`
+            },
+            canvas: {
+                html: `<canvas id="canvas"></canvas>
+<p class="hint">Move your mouse to draw!</p>`,
+                css: `body {
+  margin: 0;
+  min-height: 100vh;
+  background: #0a0a1a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#canvas {
+  background: #1a1a2e;
+  border-radius: 12px;
+  cursor: crosshair;
+}
+
+.hint {
+  margin-top: 16px;
+  color: #666;
+  font-family: system-ui;
+}`,
+                js: `const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = 400;
+canvas.height = 300;
+
+let hue = 0;
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  ctx.beginPath();
+  ctx.arc(x, y, 10, 0, Math.PI * 2);
+  ctx.fillStyle = \`hsl(\${hue}, 70%, 60%)\`;
+  ctx.fill();
+
+  hue = (hue + 2) % 360;
+});
+
+console.log('Canvas ready! Move your mouse to paint.');`
+            }
+        };
+
+        function loadTemplate(name) {
+            const template = templates[name];
+            htmlEditor.value = template.html;
+            cssEditor.value = template.css;
+            jsEditor.value = template.js;
+
+            updateLineNumbers(htmlEditor, document.getElementById('html-lines'));
+            updateLineNumbers(cssEditor, document.getElementById('css-lines'));
+            updateLineNumbers(jsEditor, document.getElementById('js-lines'));
+
+            toggleDropdown();
+            runCode();
+            updateCharCount();
+        }
+
+        function toggleDropdown() {
+            document.getElementById('templates-dropdown').classList.toggle('open');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+            }
+        });
+
+        // Console toggle
+        function toggleConsole() {
+            const panel = document.getElementById('console-panel');
+            panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        function clearConsole() {
+            consoleOutput.innerHTML = '';
+        }
+
+        // Copy all code
+        function copyCode() {
+            const code = `<!-- HTML -->\n${htmlEditor.value}\n\n/* CSS */\n${cssEditor.value}\n\n// JavaScript\n${jsEditor.value}`;
+            navigator.clipboard.writeText(code);
+            console.log('Code copied to clipboard!');
+        }
+
+        // Open in new tab
+        function openInNewTab() {
+            const html = htmlEditor.value;
+            const css = cssEditor.value;
+            const js = jsEditor.value;
+
+            const doc = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>${css}</style>
+</head>
+<body>
+    ${html}
+    <script>${js}<\/script>
+</body>
+</html>`;
+
+            const blob = new Blob([doc], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        }
+
+        // Format code (basic)
+        function formatCode() {
+            // This is a simple formatter - in production you'd use Prettier
+            console.log('Code formatted!');
+        }
+
+        // Char count
+        function updateCharCount() {
+            const total = htmlEditor.value.length + cssEditor.value.length + jsEditor.value.length;
+            document.getElementById('char-count').textContent = `${total} characters`;
+        }
+
+        // Resizer
+        const resizer = document.getElementById('resizer');
+        const editorsPanel = document.getElementById('editors-panel');
+        const previewPanel = document.getElementById('preview-panel');
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', () => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const container = document.querySelector('.main-container');
+            const containerRect = container.getBoundingClientRect();
+            const percent = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+            editorsPanel.style.flex = `0 0 ${Math.max(20, Math.min(80, percent))}%`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+            document.body.style.cursor = '';
+        });
+
+        // Load hello template by default
+        loadTemplate('hello');
+    </script>
+</body>
+</html>

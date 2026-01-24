@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Environment Template</title>
+    <style>
+        :root {
+            --bg-dark: #0d1117;
+            --bg-card: rgba(22, 27, 34, 0.95);
+            --bg-input: rgba(33, 38, 45, 0.9);
+            --border: rgba(48, 54, 61, 0.8);
+            --border-focus: #58a6ff;
+            --text: #e6edf3;
+            --text-dim: #8b949e;
+            --accent: #58a6ff;
+            --accent-secondary: #a371f7;
+            --success: #3fb950;
+            --warning: #d29922;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            border-color: var(--border-focus);
+            background: rgba(88, 166, 255, 0.1);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4393e4;
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .welcome-box {
+            max-width: 600px;
+            padding: 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
+        .welcome-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+        }
+
+        .welcome-box h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .welcome-box p {
+            color: var(--text-dim);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        /* Feature Grid */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            text-align: left;
+            margin-bottom: 24px;
+        }
+
+        .feature {
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-icon {
+            font-size: 1.2rem;
+        }
+
+        .feature-text {
+            font-size: 0.85rem;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            text-align: left;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+
+        .code-comment { color: #6a9955; }
+        .code-tag { color: #569cd6; }
+        .code-attr { color: #9cdcfe; }
+        .code-string { color: #ce9178; }
+
+        /* Toolbar Example */
+        .toolbar-example {
+            margin-top: 40px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .toolbar-example h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-dim);
+        }
+
+        .toolbar-demo {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tool-btn:hover {
+            border-color: var(--accent);
+            background: rgba(88, 166, 255, 0.1);
+        }
+
+        .tool-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .tool-divider {
+            width: 1px;
+            background: var(--border);
+            margin: 4px 8px;
+        }
+
+        /* Canvas Example */
+        .canvas-example {
+            margin-top: 24px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .canvas-area {
+            width: 100%;
+            height: 200px;
+            background: var(--bg-card);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            cursor: crosshair;
+            transition: all 0.3s;
+        }
+
+        .canvas-area:hover {
+            border-color: var(--accent);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        /* Instructions */
+        .instructions {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(163, 113, 247, 0.1);
+            border: 1px solid rgba(163, 113, 247, 0.3);
+            border-radius: 12px;
+            max-width: 700px;
+            text-align: left;
+        }
+
+        .instructions h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--accent-secondary);
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            line-height: 1.8;
+            color: var(--text-dim);
+        }
+
+        .instructions code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85em;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 16px;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>
+            <span class="header-icon">+</span>
+            New Environment Template
+        </h1>
+        <div class="header-actions">
+            <button class="btn" onclick="copyTemplate()">Copy Template</button>
+            <button class="btn btn-primary" onclick="downloadTemplate()">Download</button>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="welcome-box">
+            <div class="welcome-icon">+</div>
+            <h2>Create Your Own Environment</h2>
+            <p>
+                This is a starter template for building new collaboration environments.
+                Copy this file and customize it to create something amazing!
+            </p>
+
+            <div class="features">
+                <div class="feature">
+                    <span class="feature-icon">o</span>
+                    <span class="feature-text">Dark theme ready</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">*</span>
+                    <span class="feature-text">CSS variables</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">#</span>
+                    <span class="feature-text">Component examples</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">@</span>
+                    <span class="feature-text">Responsive layout</span>
+                </div>
+            </div>
+
+            <div class="code-block">
+                <span class="code-comment">&lt;!-- Add to sidebar in index.html --&gt;</span><br>
+                <span class="code-tag">&lt;div</span> <span class="code-attr">class=</span><span class="code-string">"env-item"</span> <span class="code-attr">data-url=</span><span class="code-string">"your-env.html"</span><span class="code-tag">&gt;</span><br>
+                &nbsp;&nbsp;<span class="code-tag">&lt;div</span> <span class="code-attr">class=</span><span class="code-string">"env-icon"</span><span class="code-tag">&gt;</span>YOUR_ICON<span class="code-tag">&lt;/div&gt;</span><br>
+                &nbsp;&nbsp;<span class="code-tag">&lt;div</span> <span class="code-attr">class=</span><span class="code-string">"env-info"</span><span class="code-tag">&gt;</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-tag">&lt;h3&gt;</span>Your Environment<span class="code-tag">&lt;/h3&gt;</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-tag">&lt;p&gt;</span>Short description<span class="code-tag">&lt;/p&gt;</span><br>
+                &nbsp;&nbsp;<span class="code-tag">&lt;/div&gt;</span><br>
+                <span class="code-tag">&lt;/div&gt;</span>
+            </div>
+        </div>
+
+        <div class="toolbar-example">
+            <h3>Example: Toolbar Component</h3>
+            <div class="toolbar-demo">
+                <button class="tool-btn active" title="Select">?</button>
+                <button class="tool-btn" title="Draw">~</button>
+                <button class="tool-btn" title="Erase">x</button>
+                <div class="tool-divider"></div>
+                <button class="tool-btn" title="Line">/</button>
+                <button class="tool-btn" title="Rectangle">[]</button>
+                <button class="tool-btn" title="Circle">O</button>
+                <div class="tool-divider"></div>
+                <button class="tool-btn" title="Text">T</button>
+                <button class="tool-btn" title="Note">N</button>
+                <div class="tool-divider"></div>
+                <button class="tool-btn" title="Undo">&lt;</button>
+                <button class="tool-btn" title="Redo">&gt;</button>
+            </div>
+        </div>
+
+        <div class="canvas-example">
+            <div class="canvas-area" id="canvas-demo">
+                Click and drag to interact with this area
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h4>How to Create a New Environment</h4>
+            <ol>
+                <li>Copy <code>template.html</code> to a new file (e.g., <code>chess.html</code>)</li>
+                <li>Customize the header, content, and styling</li>
+                <li>Add your interactive functionality with JavaScript</li>
+                <li>Register it in <code>index.html</code> sidebar</li>
+                <li>Test it in Claude Collaborate!</li>
+            </ol>
+        </div>
+    </main>
+
+    <footer class="footer">
+        Claude Collaborate Environment Template v1.0
+    </footer>
+
+    <script>
+        // Example: Interactive canvas area
+        const canvas = document.getElementById('canvas-demo');
+        let isDrawing = false;
+        let dots = [];
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            addDot(e);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) addDot(e);
+        });
+
+        canvas.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mouseleave', () => isDrawing = false);
+
+        function addDot(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const dot = document.createElement('div');
+            dot.style.cssText = `
+                position: absolute;
+                left: ${x}px;
+                top: ${y}px;
+                width: 8px;
+                height: 8px;
+                background: var(--accent);
+                border-radius: 50%;
+                pointer-events: none;
+                transform: translate(-50%, -50%);
+            `;
+            canvas.style.position = 'relative';
+            canvas.appendChild(dot);
+            dots.push(dot);
+
+            // Fade out after 2 seconds
+            setTimeout(() => {
+                dot.style.transition = 'opacity 0.5s';
+                dot.style.opacity = '0';
+                setTimeout(() => dot.remove(), 500);
+            }, 2000);
+        }
+
+        // Toolbar interaction
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Copy template to clipboard
+        function copyTemplate() {
+            const template = document.documentElement.outerHTML;
+            navigator.clipboard.writeText(template).then(() => {
+                alert('Template copied to clipboard!');
+            });
+        }
+
+        // Download template
+        function downloadTemplate() {
+            const template = document.documentElement.outerHTML;
+            const blob = new Blob([template], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'new-environment.html';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
