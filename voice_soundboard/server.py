@@ -91,6 +91,9 @@ if CHATTERBOX_AVAILABLE:
         has_paralinguistic_tags,
     )
 
+# Voice Preset Catalog
+from voice_soundboard.presets import get_catalog, PresetCatalog
+
 
 # Global engine instances (lazy loaded)
 _engine: VoiceEngine | None = None
@@ -1482,6 +1485,275 @@ async def list_tools() -> list[Tool]:
                 "properties": {}
             }
         ),
+        # Voice Preset Library tools
+        Tool(
+            name="suggest_voice_preset",
+            description=(
+                "Suggest voice presets matching a natural language description. "
+                "Search 50+ curated presets from Qwen3, VibeVoice, Hume AI, and acoustic research. "
+                "Returns presets with demographic info (gender, age, accent) and use cases."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "description": {
+                        "type": "string",
+                        "description": "What kind of voice you're looking for (e.g., 'warm narrator for meditation', 'energetic young female for gaming')"
+                    },
+                    "gender": {
+                        "type": "string",
+                        "enum": ["male", "female", "neutral"],
+                        "description": "Filter by gender (optional)"
+                    },
+                    "age_range": {
+                        "type": "string",
+                        "enum": ["child", "teen", "young_adult", "adult", "middle_aged", "elderly"],
+                        "description": "Filter by age range (optional)"
+                    },
+                    "use_case": {
+                        "type": "string",
+                        "description": "Filter by use case (e.g., 'podcast', 'meditation', 'gaming')"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 20,
+                        "description": "Maximum number of results (default: 5)"
+                    }
+                },
+                "required": ["description"]
+            }
+        ),
+        Tool(
+            name="list_voice_presets",
+            description=(
+                "List all available voice presets from the catalog. "
+                "Returns 50+ presets organized by source with demographics and tags."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "source": {
+                        "type": "string",
+                        "enum": ["qwen3", "vibevoice", "hume", "vocology", "diverse", "custom"],
+                        "description": "Filter by preset source (optional)"
+                    },
+                    "gender": {
+                        "type": "string",
+                        "enum": ["male", "female", "neutral"],
+                        "description": "Filter by gender (optional)"
+                    },
+                    "use_case": {
+                        "type": "string",
+                        "description": "Filter by use case (optional)"
+                    }
+                }
+            }
+        ),
+        Tool(
+            name="get_voice_preset",
+            description="Get detailed information about a specific voice preset by ID.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "preset_id": {
+                        "type": "string",
+                        "description": "Preset ID (e.g., 'qwen3:ryan', 'hume:patient_therapist')"
+                    }
+                },
+                "required": ["preset_id"]
+            }
+        ),
+        Tool(
+            name="preset_demographics",
+            description="Get a summary of demographic coverage in the voice preset library.",
+            inputSchema={
+                "type": "object",
+                "properties": {}
+            }
+        ),
+        # Voice Studio tools
+        Tool(
+            name="studio_start",
+            description=(
+                "Start a new Voice Studio session for creating or tuning voice presets. "
+                "Optionally start from an existing preset as a base. Use this to begin "
+                "interactive voice design with real-time preview."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "base_preset_id": {
+                        "type": "string",
+                        "description": "Optional preset ID to use as starting point (e.g., 'vocology:warm_narrator')"
+                    },
+                    "preview_text": {
+                        "type": "string",
+                        "description": "Sample text for audio previews (default: 'Hello! This is a voice preview sample.')"
+                    },
+                    "preview_voice": {
+                        "type": "string",
+                        "description": "Kokoro voice ID for synthesis (e.g., 'af_bella', 'am_michael')"
+                    }
+                }
+            }
+        ),
+        Tool(
+            name="studio_adjust",
+            description=(
+                "Adjust acoustic parameters in the current studio session. "
+                "Parameters: formant_ratio (0.8-1.2, <1=deeper, >1=brighter), "
+                "breath_intensity (0-0.5), jitter_percent (0-3%), shimmer_percent (0-10%), "
+                "pitch_drift_cents (0-20), timing_variation_ms (0-30), speed_factor (0.5-2.0)."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "formant_ratio": {
+                        "type": "number",
+                        "minimum": 0.8,
+                        "maximum": 1.2,
+                        "description": "Voice depth: <1.0 = deeper, >1.0 = brighter"
+                    },
+                    "breath_intensity": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 0.5,
+                        "description": "Breath sound level (0 = none, 0.5 = very breathy)"
+                    },
+                    "jitter_percent": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 3,
+                        "description": "Voice texture/roughness (0 = smooth, 3 = gravelly)"
+                    },
+                    "shimmer_percent": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 10,
+                        "description": "Amplitude variation (higher = breathier)"
+                    },
+                    "pitch_drift_cents": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 20,
+                        "description": "Pitch variation over phrases (0 = monotone, 20 = expressive)"
+                    },
+                    "timing_variation_ms": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 30,
+                        "description": "Timing feel (0 = precise, 30 = relaxed)"
+                    },
+                    "speed_factor": {
+                        "type": "number",
+                        "minimum": 0.5,
+                        "maximum": 2.0,
+                        "description": "Speaking speed multiplier"
+                    }
+                }
+            }
+        ),
+        Tool(
+            name="studio_ai_describe",
+            description=(
+                "Describe the desired voice characteristics in natural language, "
+                "and get suggested acoustic parameter adjustments. "
+                "Examples: 'make it deeper and more authoritative', "
+                "'add warmth and slight breathiness', 'faster and more energetic', "
+                "'calm meditation guide', 'gravelly storyteller'."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "description": {
+                        "type": "string",
+                        "description": "Natural language description of desired voice characteristics"
+                    },
+                    "apply_immediately": {
+                        "type": "boolean",
+                        "description": "Apply suggestions immediately (default: false, show suggestions first)"
+                    }
+                },
+                "required": ["description"]
+            }
+        ),
+        Tool(
+            name="studio_preview",
+            description=(
+                "Generate and play an audio preview of the current voice preset settings. "
+                "Use this to hear how the voice sounds with current parameters."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "description": "Text to speak (uses session default if not provided)"
+                    },
+                    "play": {
+                        "type": "boolean",
+                        "description": "Play audio immediately (default: true)"
+                    }
+                }
+            }
+        ),
+        Tool(
+            name="studio_save",
+            description=(
+                "Save the current studio session as a new custom voice preset. "
+                "The preset will be saved to the catalog and available for future use."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Preset name (e.g., 'My Narrator')"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Voice description for search"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Searchable tags (e.g., ['warm', 'narrator', 'male'])"
+                    },
+                    "use_cases": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Recommended use cases (e.g., ['audiobook', 'meditation'])"
+                    },
+                    "gender": {
+                        "type": "string",
+                        "enum": ["male", "female", "neutral"],
+                        "description": "Voice gender classification"
+                    },
+                    "age_range": {
+                        "type": "string",
+                        "enum": ["child", "teen", "young_adult", "adult", "middle_aged", "elderly"],
+                        "description": "Voice age range"
+                    }
+                },
+                "required": ["name", "description"]
+            }
+        ),
+        Tool(
+            name="studio_undo",
+            description="Undo the last parameter change in the studio session.",
+            inputSchema={"type": "object", "properties": {}}
+        ),
+        Tool(
+            name="studio_redo",
+            description="Redo a previously undone change in the studio session.",
+            inputSchema={"type": "object", "properties": {}}
+        ),
+        Tool(
+            name="studio_status",
+            description="Get current studio session status including active parameters and can_undo/can_redo state.",
+            inputSchema={"type": "object", "properties": {}}
+        ),
     ]
 
 
@@ -1605,6 +1877,32 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         return await handle_select_response_emotion(arguments)
     elif name == "list_llm_providers":
         return await handle_list_llm_providers(arguments)
+    # Voice Preset Library tools
+    elif name == "suggest_voice_preset":
+        return await handle_suggest_voice_preset(arguments)
+    elif name == "list_voice_presets":
+        return await handle_list_voice_presets(arguments)
+    elif name == "get_voice_preset":
+        return await handle_get_voice_preset(arguments)
+    elif name == "preset_demographics":
+        return await handle_preset_demographics(arguments)
+    # Voice Studio tools
+    elif name == "studio_start":
+        return await handle_studio_start(arguments)
+    elif name == "studio_adjust":
+        return await handle_studio_adjust(arguments)
+    elif name == "studio_ai_describe":
+        return await handle_studio_ai_describe(arguments)
+    elif name == "studio_preview":
+        return await handle_studio_preview(arguments)
+    elif name == "studio_save":
+        return await handle_studio_save(arguments)
+    elif name == "studio_undo":
+        return await handle_studio_undo(arguments)
+    elif name == "studio_redo":
+        return await handle_studio_redo(arguments)
+    elif name == "studio_status":
+        return await handle_studio_status(arguments)
     else:
         return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
@@ -3641,6 +3939,623 @@ async def handle_list_llm_providers(args: dict[str, Any]) -> list[TextContent]:
 
     except Exception as e:
         return [TextContent(type="text", text=f"Error listing providers: {e}")]
+
+
+# ===== Voice Preset Library Handlers =====
+
+async def handle_suggest_voice_preset(args: dict[str, Any]) -> list[TextContent]:
+    """Suggest voice presets matching a description."""
+    description = args.get("description", "")
+    if not description:
+        return [TextContent(type="text", text="Error: 'description' is required")]
+
+    gender = args.get("gender")
+    age_range = args.get("age_range")
+    use_case = args.get("use_case")
+    limit = args.get("limit", 5)
+
+    try:
+        catalog = get_catalog()
+
+        # Try semantic search first, fall back to tag search
+        try:
+            catalog.enable_semantic_search()
+        except (ImportError, Exception):
+            pass  # Fall back to tag search
+
+        results = catalog.search(
+            query=description,
+            limit=limit,
+            gender=gender,
+            age_range=age_range,
+        )
+
+        # Additional filtering by use_case if provided
+        if use_case:
+            results = [r for r in results if use_case in r.preset.use_cases]
+
+        if not results:
+            return [TextContent(
+                type="text",
+                text=f"No presets found matching: {description}\n"
+                     f"Try broader terms or use list_voice_presets to see all options."
+            )]
+
+        # Format results
+        lines = [f"Found {len(results)} matching voice presets:\n"]
+        for i, result in enumerate(results, 1):
+            p = result.preset
+            gender_str = p.gender.value if p.gender else "any"
+            age_str = p.age_range.value.replace("_", " ") if p.age_range else "any"
+            accent_str = p.accent or "neutral"
+
+            lines.append(f"{i}. **{p.name}** (`{p.id}`)")
+            lines.append(f"   {p.description}")
+            lines.append(f"   Demographics: {gender_str}, {age_str}, {accent_str}")
+            lines.append(f"   Use cases: {', '.join(p.use_cases[:5])}")
+            lines.append(f"   Match: {result.score:.0%}")
+            lines.append("")
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error searching presets: {e}")]
+
+
+async def handle_list_voice_presets(args: dict[str, Any]) -> list[TextContent]:
+    """List all voice presets with optional filtering."""
+    source = args.get("source")
+    gender = args.get("gender")
+    use_case = args.get("use_case")
+
+    try:
+        catalog = get_catalog()
+
+        # Apply filters
+        if source or gender or use_case:
+            presets = catalog.filter(
+                source=source,
+                gender=gender,
+                use_case=use_case,
+            )
+        else:
+            presets = catalog.all()
+
+        if not presets:
+            return [TextContent(type="text", text="No presets found matching the filters.")]
+
+        # Group by source
+        by_source: dict[str, list] = {}
+        for p in presets:
+            src = p.source.value
+            if src not in by_source:
+                by_source[src] = []
+            by_source[src].append(p)
+
+        # Format output
+        lines = [f"Voice Preset Library ({len(presets)} presets):\n"]
+
+        for src, src_presets in sorted(by_source.items()):
+            lines.append(f"## {src.upper()} ({len(src_presets)} presets)")
+            for p in src_presets:
+                gender_str = f"[{p.gender.value}]" if p.gender else ""
+                lines.append(f"  - `{p.id}`: {p.name} {gender_str}")
+                lines.append(f"    {p.description[:80]}...")
+            lines.append("")
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error listing presets: {e}")]
+
+
+async def handle_get_voice_preset(args: dict[str, Any]) -> list[TextContent]:
+    """Get detailed info about a specific preset."""
+    preset_id = args.get("preset_id", "")
+    if not preset_id:
+        return [TextContent(type="text", text="Error: 'preset_id' is required")]
+
+    try:
+        catalog = get_catalog()
+        preset = catalog.get(preset_id)
+
+        if preset is None:
+            # Suggest similar IDs
+            all_ids = [p.id for p in catalog.all()]
+            suggestions = [pid for pid in all_ids if preset_id.split(":")[-1] in pid][:5]
+            return [TextContent(
+                type="text",
+                text=f"Preset not found: {preset_id}\n"
+                     f"Did you mean: {', '.join(suggestions) if suggestions else 'No similar presets found'}"
+            )]
+
+        # Format detailed output
+        lines = [
+            f"# {preset.name} (`{preset.id}`)\n",
+            f"**Source:** {preset.source.value}",
+            f"**Description:** {preset.description}",
+            "",
+            "## Demographics",
+            f"- Gender: {preset.gender.value if preset.gender else 'any'}",
+            f"- Age: {preset.age_range.value.replace('_', ' ') if preset.age_range else 'any'}",
+            f"- Accent: {preset.accent or 'neutral'}",
+            f"- Ethnicity hint: {preset.ethnicity_hint or 'none'}",
+            "",
+            "## Characteristics",
+            f"- Energy: {preset.energy.value if preset.energy else 'neutral'}",
+            f"- Tone: {preset.tone.value if preset.tone else 'neutral'}",
+            f"- Tags: {', '.join(preset.tags)}",
+            "",
+            "## Use Cases",
+            f"{', '.join(preset.use_cases)}",
+            "",
+        ]
+
+        if preset.voice_prompt:
+            lines.extend([
+                "## Voice Prompt",
+                f'"{preset.voice_prompt}"',
+                "",
+            ])
+
+        if preset.acting_instructions:
+            lines.extend([
+                "## Acting Instructions",
+                f'"{preset.acting_instructions}"',
+                "",
+            ])
+
+        if preset.acoustic:
+            lines.extend([
+                "## Acoustic Parameters",
+                f"- Formant ratio: {preset.acoustic.formant_ratio}",
+                f"- Speed: {preset.acoustic.speed_factor}x",
+                f"- Jitter: {preset.acoustic.jitter_percent}%",
+                "",
+            ])
+
+        if preset.kokoro_voice:
+            lines.append(f"**Kokoro voice:** {preset.kokoro_voice}")
+
+        lines.append(f"**Languages:** {', '.join(preset.languages)}")
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error getting preset: {e}")]
+
+
+async def handle_preset_demographics(args: dict[str, Any]) -> list[TextContent]:
+    """Get demographic coverage summary."""
+    try:
+        catalog = get_catalog()
+        summary = catalog.demographics_summary()
+
+        lines = [
+            f"# Voice Preset Demographics\n",
+            f"**Total presets:** {summary['total']}",
+            "",
+            "## By Source",
+        ]
+
+        for src, count in sorted(summary["by_source"].items()):
+            lines.append(f"  - {src}: {count}")
+
+        lines.extend(["", "## By Gender"])
+        for gender, count in summary["by_gender"].items():
+            lines.append(f"  - {gender}: {count}")
+
+        lines.extend(["", "## By Age Range"])
+        for age, count in sorted(summary["by_age"].items()):
+            lines.append(f"  - {age.replace('_', ' ')}: {count}")
+
+        lines.extend(["", "## By Accent"])
+        for accent, count in sorted(summary["by_accent"].items(), key=lambda x: -x[1])[:15]:
+            lines.append(f"  - {accent}: {count}")
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error getting demographics: {e}")]
+
+
+# ============================================================================
+# Voice Studio Handlers
+# ============================================================================
+
+async def handle_studio_start(args: dict[str, Any]) -> list[TextContent]:
+    """Start a new Voice Studio session."""
+    try:
+        from voice_soundboard.studio.session import create_session, get_current_session
+        from voice_soundboard.presets import get_catalog
+
+        base_preset_id = args.get("base_preset_id")
+        preview_text = args.get("preview_text")
+        preview_voice = args.get("preview_voice")
+
+        # Load base preset if specified
+        base_preset = None
+        if base_preset_id:
+            catalog = get_catalog()
+            base_preset = catalog.get(base_preset_id)
+            if not base_preset:
+                return [TextContent(type="text", text=f"Error: Preset not found: {base_preset_id}")]
+
+        # Create session
+        session = create_session(
+            base_preset=base_preset,
+            preview_text=preview_text,
+            preview_voice=preview_voice,
+        )
+
+        # Format response
+        params = session.get_current_params()
+        lines = [
+            f"# Voice Studio Session Started",
+            f"",
+            f"**Session ID:** {session.session_id}",
+            f"**Base preset:** {base_preset_id or 'scratch'}",
+            f"**Preview voice:** {session.preview_voice}",
+            f"",
+            f"## Current Parameters",
+            f"- Formant ratio: {params.get('formant_ratio', 1.0):.2f} (depth)",
+            f"- Breath intensity: {params.get('breath_intensity', 0.15):.2f}",
+            f"- Jitter: {params.get('jitter_percent', 0.5):.1f}% (texture)",
+            f"- Pitch drift: {params.get('pitch_drift_cents', 8.0):.1f} cents",
+            f"- Timing variation: {params.get('timing_variation_ms', 10.0):.1f} ms",
+            f"- Speed: {params.get('speed_factor', 1.0):.2f}x",
+            f"",
+            f"## Next Steps",
+            f"- Use `studio_adjust` to modify parameters",
+            f"- Use `studio_ai_describe` for natural language tuning",
+            f"- Use `studio_preview` to hear the current voice",
+            f"- Use `studio_save` when you're happy with the result",
+        ]
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error starting studio: {e}")]
+
+
+async def handle_studio_adjust(args: dict[str, Any]) -> list[TextContent]:
+    """Adjust acoustic parameters in the studio session."""
+    try:
+        from voice_soundboard.studio.session import get_current_session
+        from voice_soundboard.studio.engine import validate_params
+
+        session = get_current_session()
+        if not session:
+            return [TextContent(type="text", text="Error: No active studio session. Use `studio_start` first.")]
+
+        # Validate and apply changes
+        validated = validate_params(args)
+        if not validated:
+            return [TextContent(type="text", text="Error: No valid parameters provided.")]
+
+        changes = session.apply_changes(validated)
+
+        # Format response
+        lines = ["# Parameters Adjusted", ""]
+        for param, new_val in changes["new"].items():
+            old_val = changes["old"][param]
+            direction = "↑" if new_val > old_val else "↓" if new_val < old_val else "="
+            lines.append(f"- **{param}:** {old_val:.2f} → {new_val:.2f} {direction}")
+
+        lines.extend([
+            "",
+            f"*Use `studio_preview` to hear the changes.*",
+            f"*Can undo: {len(session.undo_stack)} step(s)*",
+        ])
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error adjusting parameters: {e}")]
+
+
+async def handle_studio_ai_describe(args: dict[str, Any]) -> list[TextContent]:
+    """Parse natural language description and suggest parameters."""
+    try:
+        from voice_soundboard.studio.session import get_current_session
+        from voice_soundboard.studio.ai_assistant import StudioAIAssistant
+
+        session = get_current_session()
+        if not session:
+            return [TextContent(type="text", text="Error: No active studio session. Use `studio_start` first.")]
+
+        description = args.get("description", "")
+        apply_immediately = args.get("apply_immediately", False)
+
+        if not description:
+            return [TextContent(type="text", text="Error: 'description' is required.")]
+
+        # Parse description
+        assistant = StudioAIAssistant()
+        result = assistant.parse_description(
+            description,
+            base_params=session.current_preset.acoustic,
+        )
+
+        # Track suggestion
+        session.add_ai_suggestion(description, result["params"])
+
+        lines = [
+            f"# AI Voice Design Assistant",
+            f"",
+            f"**Your request:** \"{description}\"",
+            f"",
+        ]
+
+        if result["matched_keywords"]:
+            lines.extend([
+                f"## Matched Voice Qualities",
+                f"{', '.join(result['matched_keywords'])}",
+                "",
+            ])
+
+        if result["params"]:
+            lines.append("## Suggested Parameters")
+            for param, value in result["params"].items():
+                lines.append(f"- **{param}:** {value:.2f}")
+            lines.append("")
+
+            if apply_immediately:
+                session.apply_changes(result["params"])
+                session.mark_suggestion_applied()
+                lines.extend([
+                    "✓ **Changes applied!** Use `studio_preview` to hear the result.",
+                    "",
+                ])
+            else:
+                lines.extend([
+                    "*To apply these suggestions, either:*",
+                    "- Call `studio_ai_describe` with `apply_immediately: true`",
+                    "- Call `studio_adjust` with the specific parameters you want",
+                    "",
+                ])
+        else:
+            lines.extend([
+                "No specific parameters matched. Try keywords like:",
+                "- Depth: deep, bright, warm, resonant",
+                "- Texture: smooth, gravelly, husky, raspy",
+                "- Energy: calm, energetic, relaxed, lively",
+                "- Style: narrator, authoritative, intimate, youthful",
+                "",
+            ])
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error processing description: {e}")]
+
+
+async def handle_studio_preview(args: dict[str, Any]) -> list[TextContent]:
+    """Generate and play a preview of the current voice settings."""
+    try:
+        from voice_soundboard.studio.session import get_current_session
+        from voice_soundboard.studio.engine import VoiceStudioEngine, params_to_description
+
+        session = get_current_session()
+        if not session:
+            return [TextContent(type="text", text="Error: No active studio session. Use `studio_start` first.")]
+
+        text = args.get("text", session.preview_text)
+        should_play = args.get("play", True)
+
+        # Generate preview
+        engine = VoiceStudioEngine()
+        audio, sr = await engine.generate_preview(
+            preset=session.current_preset,
+            text=text,
+            voice=session.preview_voice,
+        )
+
+        # Save to temp file
+        output_path = engine.save_preview(audio, sr)
+
+        # Play if requested
+        if should_play:
+            try:
+                from voice_soundboard.audio import play_audio
+                play_audio(str(output_path), sample_rate=sr, blocking=False)
+            except Exception as play_err:
+                logger.warning(f"Could not play audio: {play_err}")
+
+        # Get description of current params
+        params = session.current_preset.acoustic
+        voice_desc = params_to_description(params) if params else "neutral"
+
+        lines = [
+            f"# Voice Preview Generated",
+            f"",
+            f"**Text:** \"{text[:50]}{'...' if len(text) > 50 else ''}\"",
+            f"**Voice:** {session.preview_voice}",
+            f"**Character:** {voice_desc}",
+            f"**Duration:** {len(audio) / sr:.2f}s",
+            f"",
+            f"**File:** {output_path}",
+        ]
+
+        if should_play:
+            lines.append("\n*Playing audio...*")
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error generating preview: {e}")]
+
+
+async def handle_studio_save(args: dict[str, Any]) -> list[TextContent]:
+    """Save the current session as a custom preset."""
+    try:
+        from voice_soundboard.studio.session import get_current_session
+        from voice_soundboard.presets import get_catalog
+
+        session = get_current_session()
+        if not session:
+            return [TextContent(type="text", text="Error: No active studio session. Use `studio_start` first.")]
+
+        name = args.get("name")
+        description = args.get("description")
+
+        if not name or not description:
+            return [TextContent(type="text", text="Error: 'name' and 'description' are required.")]
+
+        # Update metadata
+        session.update_metadata(
+            name=name,
+            description=description,
+            tags=args.get("tags", []),
+            use_cases=args.get("use_cases", []),
+            gender=args.get("gender"),
+            age_range=args.get("age_range"),
+        )
+
+        # Update preset ID
+        preset_id = f"custom:{name.lower().replace(' ', '_')}"
+        session.current_preset.id = preset_id
+
+        # Save to catalog
+        catalog = get_catalog()
+        save_path = catalog.save_custom(session.current_preset)
+
+        lines = [
+            f"# Preset Saved!",
+            f"",
+            f"**Preset ID:** {preset_id}",
+            f"**Name:** {name}",
+            f"**Description:** {description}",
+            f"",
+            f"**Saved to:** {save_path}",
+            f"",
+            f"The preset is now available in the catalog and can be used with:",
+            f"- `get_voice_preset` with id `{preset_id}`",
+            f"- `suggest_voice_preset` (will appear in search results)",
+        ]
+
+        if session.base_preset_id:
+            lines.append(f"\n*Based on:* {session.base_preset_id}")
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error saving preset: {e}")]
+
+
+async def handle_studio_undo(args: dict[str, Any]) -> list[TextContent]:
+    """Undo the last parameter change."""
+    try:
+        from voice_soundboard.studio.session import get_current_session
+
+        session = get_current_session()
+        if not session:
+            return [TextContent(type="text", text="Error: No active studio session. Use `studio_start` first.")]
+
+        result = session.undo()
+        if result is None:
+            return [TextContent(type="text", text="Nothing to undo.")]
+
+        params = session.get_current_params()
+        lines = [
+            f"# Undo Successful",
+            f"",
+            f"**Current parameters:**",
+            f"- Formant: {params.get('formant_ratio', 1.0):.2f}",
+            f"- Breath: {params.get('breath_intensity', 0.15):.2f}",
+            f"- Jitter: {params.get('jitter_percent', 0.5):.1f}%",
+            f"",
+            f"*{len(session.undo_stack)} more undo(s) available*",
+        ]
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error undoing: {e}")]
+
+
+async def handle_studio_redo(args: dict[str, Any]) -> list[TextContent]:
+    """Redo a previously undone change."""
+    try:
+        from voice_soundboard.studio.session import get_current_session
+
+        session = get_current_session()
+        if not session:
+            return [TextContent(type="text", text="Error: No active studio session. Use `studio_start` first.")]
+
+        result = session.redo()
+        if result is None:
+            return [TextContent(type="text", text="Nothing to redo.")]
+
+        params = session.get_current_params()
+        lines = [
+            f"# Redo Successful",
+            f"",
+            f"**Current parameters:**",
+            f"- Formant: {params.get('formant_ratio', 1.0):.2f}",
+            f"- Breath: {params.get('breath_intensity', 0.15):.2f}",
+            f"- Jitter: {params.get('jitter_percent', 0.5):.1f}%",
+            f"",
+            f"*{len(session.redo_stack)} more redo(s) available*",
+        ]
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error redoing: {e}")]
+
+
+async def handle_studio_status(args: dict[str, Any]) -> list[TextContent]:
+    """Get current studio session status."""
+    try:
+        from voice_soundboard.studio.session import get_current_session, list_sessions
+
+        session = get_current_session()
+        if not session:
+            # List any existing sessions
+            sessions = list_sessions()
+            if sessions:
+                lines = [
+                    "No active studio session.",
+                    "",
+                    "**Existing sessions:**",
+                ]
+                for s in sessions:
+                    lines.append(f"- {s['session_id']}: {s['name']}")
+                lines.append("")
+                lines.append("Use `studio_start` to create a new session.")
+            else:
+                lines = ["No active studio session. Use `studio_start` to begin."]
+            return [TextContent(type="text", text="\n".join(lines))]
+
+        status = session.get_status()
+        params = status["parameters"]
+
+        lines = [
+            f"# Voice Studio Status",
+            f"",
+            f"**Session:** {status['session_id']}",
+            f"**Name:** {status['name']}",
+            f"**Base preset:** {status['base_preset'] or 'scratch'}",
+            f"",
+            f"## Current Parameters",
+            f"| Parameter | Value | Range |",
+            f"|-----------|-------|-------|",
+            f"| Formant ratio | {params['formant_ratio']:.2f} | 0.8-1.2 (depth) |",
+            f"| Breath intensity | {params['breath_intensity']:.2f} | 0-0.5 |",
+            f"| Jitter | {params['jitter_percent']:.1f}% | 0-3% (texture) |",
+            f"| Pitch drift | {params['pitch_drift_cents']:.1f}¢ | 0-20 cents |",
+            f"| Timing var | {params['timing_variation_ms']:.1f}ms | 0-30ms |",
+            f"| Speed | {params['speed_factor']:.2f}x | 0.5-2.0 |",
+            f"",
+            f"**Can undo:** {status['can_undo']} | **Can redo:** {status['can_redo']}",
+            f"**Preview voice:** {status['preview_voice']}",
+        ]
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error getting status: {e}")]
 
 
 async def main():

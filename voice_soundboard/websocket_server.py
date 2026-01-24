@@ -52,6 +52,16 @@ from voice_soundboard.effects import get_effect, list_effects
 from voice_soundboard.ssml import parse_ssml
 from voice_soundboard.emotions import get_emotion_voice_params, apply_emotion_to_text, EMOTIONS
 from voice_soundboard.streaming import StreamingEngine
+from voice_soundboard.studio import VoiceStudioEngine, VoiceStudioSession, StudioAIAssistant
+from voice_soundboard.studio.session import (
+    create_session,
+    get_session,
+    get_current_session,
+    set_current_session,
+    delete_session,
+    list_sessions,
+)
+from voice_soundboard.presets import get_catalog
 from voice_soundboard.security import (
     WebSocketSecurityManager,
     validate_text_input,
@@ -156,6 +166,8 @@ class VoiceWebSocketServer:
         # Engine instances (lazy loaded)
         self._engine: Optional[VoiceEngine] = None
         self._streaming_engine: Optional[StreamingEngine] = None
+        self._studio_engine: Optional[VoiceStudioEngine] = None
+        self._studio_ai: Optional[StudioAIAssistant] = None
 
         # Client tracking
         self._clients: dict[str, WebSocketServerProtocol] = {}
@@ -186,6 +198,20 @@ class VoiceWebSocketServer:
                 logger.error("Failed to load streaming engine: %s", e)
                 raise RuntimeError(f"Streaming engine initialization failed: {e}") from e
         return self._streaming_engine
+
+    def _get_studio_engine(self) -> VoiceStudioEngine:
+        """Lazy-load studio engine."""
+        if self._studio_engine is None:
+            self._studio_engine = VoiceStudioEngine()
+            logger.debug("Studio engine loaded")
+        return self._studio_engine
+
+    def _get_studio_ai(self) -> StudioAIAssistant:
+        """Lazy-load studio AI assistant."""
+        if self._studio_ai is None:
+            self._studio_ai = StudioAIAssistant()
+            logger.debug("Studio AI assistant loaded")
+        return self._studio_ai
 
     def _get_client_id(self, ws: WebSocketServerProtocol) -> str:
         """Get unique client identifier."""
@@ -627,6 +653,352 @@ class VoiceWebSocketServer:
             request_id=request_id
         )
 
+    # ===== Voice Studio Handlers =====
+
+    async def handle_studio_start(
+        self,
+        ws: WebSocketServerProtocol,
+        params: dict,
+        request_id: Optional[str] = None,
+    ):
+        """Start a new Voice Studio session."""
+        base_preset_id = params.get("base_preset_id")
+        preview_text = params.get("preview_text")
+        preview_voice = params.get("preview_voice")
+
+        try:
+            # Get base preset if specified
+            base_preset = None
+            if base_preset_id:
+                catalog = get_catalog()
+                base_preset = catalog.get(base_preset_id)
+                if base_preset is None:
+                    await self._send_error(ws, "studio_start", f"Preset not found: {base_preset_id}", request_id)
+                    return
+
+            # Create session
+            session = create_session(
+                base_preset=base_preset,
+                preview_text=preview_text,
+                preview_voice=preview_voice,
+            )
+
+            await self._send_response(
+                ws, True, "studio_start",
+                {
+                    "session_id": session.session_id,
+                    "base_preset_id": session.base_preset_id,
+                    "current_params": session.get_current_params(),
+                    "preview_voice": session.preview_voice,
+                    "status": session.get_status(),
+                },
+                request_id=request_id,
+            )
+            logger.info(f"Studio session started: {session.session_id}")
+
+        except Exception as e:
+            logger.exception("Error starting studio session")
+            await self._send_error(ws, "studio_start", safe_error_message(e), request_id)
+
+    async def handle_studio_adjust(
+        self,
+        ws: WebSocketServerProtocol,
+        params: dict,
+        request_id: Optional[str] = None,
+    ):
+        """Adjust acoustic parameters in current session."""
+        session = get_current_session()
+        if not session:
+            await self._send_error(ws, "studio_adjust", "No active studio session", request_id)
+            return
+
+        try:
+            # Extract parameter changes
+            param_changes = {}
+            valid_params = [
+                "formant_ratio", "breath_intensity", "breath_volume_db",
+                "jitter_percent", "shimmer_percent", "pitch_drift_cents",
+                "timing_variation_ms", "speed_factor", "pitch_shift_semitones"
+            ]
+
+            for key in valid_params:
+                if key in params:
+                    param_changes[key] = float(params[key])
+
+            if not param_changes:
+                await self._send_error(ws, "studio_adjust", "No valid parameters provided", request_id)
+                return
+
+            # Apply changes
+            changes = session.apply_changes(param_changes)
+
+            await self._send_response(
+                ws, True, "studio_adjust",
+                {
+                    "session_id": session.session_id,
+                    "changes": changes,
+                    "current_params": session.get_current_params(),
+                    "can_undo": len(session.undo_stack) > 0,
+                    "can_redo": len(session.redo_stack) > 0,
+                },
+                request_id=request_id,
+            )
+
+        except Exception as e:
+            logger.exception("Error adjusting studio params")
+            await self._send_error(ws, "studio_adjust", safe_error_message(e), request_id)
+
+    async def handle_studio_ai_describe(
+        self,
+        ws: WebSocketServerProtocol,
+        params: dict,
+        request_id: Optional[str] = None,
+    ):
+        """Parse natural language voice description."""
+        session = get_current_session()
+        if not session:
+            await self._send_error(ws, "studio_ai_describe", "No active studio session", request_id)
+            return
+
+        description = params.get("description", "").strip()
+        if not description:
+            await self._send_error(ws, "studio_ai_describe", "No description provided", request_id)
+            return
+
+        apply_changes = params.get("apply", False)
+
+        try:
+            ai = self._get_studio_ai()
+            result = ai.parse_description(description)
+
+            # Track suggestion
+            session.add_ai_suggestion(description, result["params"])
+
+            # Optionally apply
+            if apply_changes and result["params"]:
+                changes = session.apply_changes(result["params"])
+                session.mark_suggestion_applied()
+                result["applied"] = True
+                result["changes"] = changes
+            else:
+                result["applied"] = False
+
+            await self._send_response(
+                ws, True, "studio_ai_describe",
+                {
+                    "session_id": session.session_id,
+                    "description": description,
+                    "result": result,
+                    "current_params": session.get_current_params(),
+                },
+                request_id=request_id,
+            )
+
+        except Exception as e:
+            logger.exception("Error in AI description parsing")
+            await self._send_error(ws, "studio_ai_describe", safe_error_message(e), request_id)
+
+    async def handle_studio_preview(
+        self,
+        ws: WebSocketServerProtocol,
+        params: dict,
+        request_id: Optional[str] = None,
+    ):
+        """Generate preview audio for current session."""
+        session = get_current_session()
+        if not session:
+            await self._send_error(ws, "studio_preview", "No active studio session", request_id)
+            return
+
+        text = params.get("text", session.preview_text)
+        voice = params.get("voice", session.preview_voice)
+        return_audio = params.get("return_audio", True)
+
+        try:
+            engine = self._get_studio_engine()
+            audio, sr = await engine.generate_preview(
+                preset=session.current_preset,
+                text=text,
+                voice=voice,
+            )
+
+            # Save preview
+            preview_path = engine.save_preview(audio, sr)
+
+            data = {
+                "session_id": session.session_id,
+                "file_path": str(preview_path),
+                "duration": len(audio) / sr,
+                "sample_rate": sr,
+                "cache_key": session.get_preview_cache_key(),
+            }
+
+            # Return audio as base64
+            if return_audio:
+                audio_bytes = audio.tobytes()
+                data["audio_base64"] = base64.b64encode(audio_bytes).decode()
+
+            await self._send_response(ws, True, "studio_preview", data, request_id=request_id)
+
+        except Exception as e:
+            logger.exception("Error generating studio preview")
+            await self._send_error(ws, "studio_preview", safe_error_message(e), request_id)
+
+    async def handle_studio_undo(
+        self,
+        ws: WebSocketServerProtocol,
+        params: dict,
+        request_id: Optional[str] = None,
+    ):
+        """Undo last parameter change."""
+        session = get_current_session()
+        if not session:
+            await self._send_error(ws, "studio_undo", "No active studio session", request_id)
+            return
+
+        state = session.undo()
+        if state is None:
+            await self._send_error(ws, "studio_undo", "Nothing to undo", request_id)
+            return
+
+        await self._send_response(
+            ws, True, "studio_undo",
+            {
+                "session_id": session.session_id,
+                "current_params": session.get_current_params(),
+                "can_undo": len(session.undo_stack) > 0,
+                "can_redo": len(session.redo_stack) > 0,
+            },
+            request_id=request_id,
+        )
+
+    async def handle_studio_redo(
+        self,
+        ws: WebSocketServerProtocol,
+        params: dict,
+        request_id: Optional[str] = None,
+    ):
+        """Redo previously undone change."""
+        session = get_current_session()
+        if not session:
+            await self._send_error(ws, "studio_redo", "No active studio session", request_id)
+            return
+
+        state = session.redo()
+        if state is None:
+            await self._send_error(ws, "studio_redo", "Nothing to redo", request_id)
+            return
+
+        await self._send_response(
+            ws, True, "studio_redo",
+            {
+                "session_id": session.session_id,
+                "current_params": session.get_current_params(),
+                "can_undo": len(session.undo_stack) > 0,
+                "can_redo": len(session.redo_stack) > 0,
+            },
+            request_id=request_id,
+        )
+
+    async def handle_studio_status(
+        self,
+        ws: WebSocketServerProtocol,
+        params: dict,
+        request_id: Optional[str] = None,
+    ):
+        """Get current studio session status."""
+        session = get_current_session()
+        if not session:
+            await self._send_response(
+                ws, True, "studio_status",
+                {"active": False, "sessions": list_sessions()},
+                request_id=request_id,
+            )
+            return
+
+        await self._send_response(
+            ws, True, "studio_status",
+            {
+                "active": True,
+                "session": session.get_status(),
+                "current_params": session.get_current_params(),
+                "sessions": list_sessions(),
+            },
+            request_id=request_id,
+        )
+
+    async def handle_studio_save(
+        self,
+        ws: WebSocketServerProtocol,
+        params: dict,
+        request_id: Optional[str] = None,
+    ):
+        """Save current session as a custom preset."""
+        session = get_current_session()
+        if not session:
+            await self._send_error(ws, "studio_save", "No active studio session", request_id)
+            return
+
+        name = params.get("name", "").strip()
+        if not name:
+            await self._send_error(ws, "studio_save", "Preset name required", request_id)
+            return
+
+        try:
+            # Update metadata
+            session.update_metadata(
+                name=name,
+                description=params.get("description"),
+                tags=params.get("tags"),
+                use_cases=params.get("use_cases"),
+                gender=params.get("gender"),
+                age_range=params.get("age_range"),
+                accent=params.get("accent"),
+                energy=params.get("energy"),
+                tone=params.get("tone"),
+            )
+
+            # Save to catalog
+            catalog = get_catalog()
+            save_path = catalog.save_custom(session.current_preset)
+
+            await self._send_response(
+                ws, True, "studio_save",
+                {
+                    "preset_id": session.current_preset.id,
+                    "name": session.current_preset.name,
+                    "saved_to": str(save_path),
+                    "preset": session.current_preset.to_dict(),
+                },
+                request_id=request_id,
+            )
+            logger.info(f"Saved custom preset: {session.current_preset.id}")
+
+        except Exception as e:
+            logger.exception("Error saving studio preset")
+            await self._send_error(ws, "studio_save", safe_error_message(e), request_id)
+
+    async def handle_studio_list_presets(
+        self,
+        ws: WebSocketServerProtocol,
+        params: dict,
+        request_id: Optional[str] = None,
+    ):
+        """List available presets for studio base."""
+        try:
+            catalog = get_catalog()
+            presets = catalog.to_compact_list()
+
+            await self._send_response(
+                ws, True, "studio_list_presets",
+                {"presets": presets, "count": len(presets)},
+                request_id=request_id,
+            )
+
+        except Exception as e:
+            logger.exception("Error listing presets")
+            await self._send_error(ws, "studio_list_presets", safe_error_message(e), request_id)
+
     async def handle_message(self, ws: WebSocketServerProtocol, message: str):
         """Route incoming messages to appropriate handlers."""
         client_id = self._get_client_id(ws)
@@ -664,6 +1036,16 @@ class VoiceWebSocketServer:
             "list_emotions": self.handle_list_emotions,
             "list_effects": self.handle_list_effects,
             "status": self.handle_status,
+            # Voice Studio handlers
+            "studio_start": self.handle_studio_start,
+            "studio_adjust": self.handle_studio_adjust,
+            "studio_ai_describe": self.handle_studio_ai_describe,
+            "studio_preview": self.handle_studio_preview,
+            "studio_undo": self.handle_studio_undo,
+            "studio_redo": self.handle_studio_redo,
+            "studio_status": self.handle_studio_status,
+            "studio_save": self.handle_studio_save,
+            "studio_list_presets": self.handle_studio_list_presets,
         }
 
         handler = handlers.get(action)
@@ -695,12 +1077,19 @@ class VoiceWebSocketServer:
         # SECURITY: Check API key if required
         # API key can be in query string: ws://host:port?key=xxx
         api_key = None
-        if ws.request.path and "?" in ws.request.path:
-            query = ws.request.path.split("?", 1)[1]
-            for param in query.split("&"):
-                if param.startswith("key="):
-                    api_key = param[4:]
-                    break
+        try:
+            # Try different websockets API versions
+            path = getattr(ws, 'path', None)
+            if path is None and hasattr(ws, 'request'):
+                path = ws.request.path
+            if path and "?" in path:
+                query = path.split("?", 1)[1]
+                for param in query.split("&"):
+                    if param.startswith("key="):
+                        api_key = param[4:]
+                        break
+        except AttributeError:
+            pass  # No path available, continue without API key from URL
 
         if not self._security.validate_api_key(api_key):
             logger.warning(f"Connection rejected: invalid API key from {origin or 'no-origin'}")

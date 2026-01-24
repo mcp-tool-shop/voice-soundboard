@@ -4,6 +4,15 @@ Voice Preset Library
 Curated voice presets combining formant shifting and subtle humanization.
 Based on acoustic research of notable speakers and voice archetypes.
 
+.. deprecated:: 1.2.0
+    This module is deprecated. Use `voice_soundboard.presets` instead.
+    The new preset system provides 70+ presets with semantic search,
+    demographic coverage, and multi-source support.
+
+    Migration guide:
+        Old: from voice_soundboard.vocology.presets import VoicePreset, apply_preset
+        New: from voice_soundboard.presets import get_catalog, VoicePreset as NewPreset
+
 Reference Sources:
 - Deep authoritative male voices: ~96 Hz F0
 - Average male: 100-130 Hz F0
@@ -23,6 +32,7 @@ from enum import Enum
 from typing import Optional, Tuple, Union
 from pathlib import Path
 import numpy as np
+import warnings
 
 from .humanize import (
     HumanizeConfig,
@@ -32,6 +42,32 @@ from .humanize import (
     EmotionalState,
 )
 from .formants import FormantShifter
+
+
+# Emit deprecation warning on module import
+warnings.warn(
+    "voice_soundboard.vocology.presets is deprecated. "
+    "Use voice_soundboard.presets instead for 70+ presets with semantic search.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+
+# Mapping from old VoicePreset enum values to new catalog IDs
+_OLD_TO_NEW_PRESET_MAP = {
+    "warm_narrator": "vocology:warm_narrator",
+    "deep_authority": "vocology:deep_authority",
+    "energetic_host": "vocology:energetic_host",
+    "young_bright": "vocology:young_bright",
+    "elderly_wise": "vocology:elderly_wise",
+    "husky_intimate": "vocology:husky_intimate",
+    "child_like": "vocology:child_like",
+    "news_anchor": "vocology:news_anchor",
+    "audiobook": "vocology:audiobook",
+    "calm_meditation": "vocology:calm_meditation",
+    "confident_presenter": "vocology:confident_presenter",
+    "friendly_assistant": "vocology:friendly_assistant",
+}
 
 
 class VoicePreset(Enum):
@@ -418,20 +454,111 @@ def apply_preset(
 
 # Convenience aliases for common presets
 def apply_narrator(audio, sample_rate=None):
-    """Apply warm narrator preset."""
+    """Apply warm narrator preset.
+
+    .. deprecated:: 1.2.0
+        Use `voice_soundboard.presets.get_catalog().get("vocology:warm_narrator")` instead.
+    """
+    warnings.warn(
+        "apply_narrator is deprecated. Use voice_soundboard.presets instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return apply_preset(audio, VoicePreset.WARM_NARRATOR, sample_rate)
 
 
 def apply_authority(audio, sample_rate=None):
-    """Apply deep authority preset."""
+    """Apply deep authority preset.
+
+    .. deprecated:: 1.2.0
+        Use `voice_soundboard.presets.get_catalog().get("vocology:deep_authority")` instead.
+    """
+    warnings.warn(
+        "apply_authority is deprecated. Use voice_soundboard.presets instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return apply_preset(audio, VoicePreset.DEEP_AUTHORITY, sample_rate)
 
 
 def apply_young(audio, sample_rate=None):
-    """Apply young bright preset."""
+    """Apply young bright preset.
+
+    .. deprecated:: 1.2.0
+        Use `voice_soundboard.presets.get_catalog().get("vocology:young_bright")` instead.
+    """
+    warnings.warn(
+        "apply_young is deprecated. Use voice_soundboard.presets instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return apply_preset(audio, VoicePreset.YOUNG_BRIGHT, sample_rate)
 
 
 def apply_elderly(audio, sample_rate=None):
-    """Apply elderly wise preset."""
+    """Apply elderly wise preset.
+
+    .. deprecated:: 1.2.0
+        Use `voice_soundboard.presets.get_catalog().get("vocology:elderly_wise")` instead.
+    """
+    warnings.warn(
+        "apply_elderly is deprecated. Use voice_soundboard.presets instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return apply_preset(audio, VoicePreset.ELDERLY_WISE, sample_rate)
+
+
+# === MIGRATION HELPERS ===
+
+def get_new_preset_id(old_preset: VoicePreset) -> str:
+    """
+    Get the new catalog ID for an old VoicePreset enum value.
+
+    Args:
+        old_preset: Old VoicePreset enum value
+
+    Returns:
+        New catalog ID (e.g., "vocology:warm_narrator")
+
+    Example:
+        >>> from voice_soundboard.vocology.presets import VoicePreset, get_new_preset_id
+        >>> new_id = get_new_preset_id(VoicePreset.WARM_NARRATOR)
+        >>> # new_id == "vocology:warm_narrator"
+        >>> from voice_soundboard.presets import get_catalog
+        >>> new_preset = get_catalog().get(new_id)
+    """
+    return _OLD_TO_NEW_PRESET_MAP.get(old_preset.value, f"vocology:{old_preset.value}")
+
+
+def migrate_to_new_catalog():
+    """
+    Helper to migrate from old presets to new catalog system.
+
+    Returns a dictionary mapping old enum values to new VoicePreset objects.
+
+    Example:
+        >>> mapping = migrate_to_new_catalog()
+        >>> new_preset = mapping[VoicePreset.WARM_NARRATOR]
+        >>> print(new_preset.description)
+    """
+    try:
+        from voice_soundboard.presets import get_catalog
+        catalog = get_catalog()
+
+        result = {}
+        for old_preset in VoicePreset:
+            new_id = get_new_preset_id(old_preset)
+            new_preset = catalog.get(new_id)
+            if new_preset:
+                result[old_preset] = new_preset
+            else:
+                warnings.warn(f"No migration found for {old_preset.value}")
+
+        return result
+    except ImportError:
+        warnings.warn(
+            "voice_soundboard.presets not available. "
+            "Install sentence-transformers for full features."
+        )
+        return {}

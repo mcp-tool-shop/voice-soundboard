@@ -65,6 +65,17 @@ async def index_handler(request: web.Request) -> web.Response:
         return web.Response(text="Web UI not found", status=404)
 
 
+async def studio_handler(request: web.Request) -> web.Response:
+    """Serve the Voice Studio page."""
+    web_dir = Path(__file__).parent / "web" / "studio"
+    index_path = web_dir / "index.html"
+
+    if index_path.exists():
+        return web.FileResponse(index_path)
+    else:
+        return web.Response(text="Voice Studio not found", status=404)
+
+
 async def manifest_handler(request: web.Request) -> web.Response:
     """Serve PWA manifest for 'Add to Home Screen' functionality."""
     manifest = {
@@ -249,6 +260,7 @@ def create_app() -> web.Application:
 
     # Routes
     app.router.add_get("/", index_handler)
+    app.router.add_get("/studio", studio_handler)
     app.router.add_get("/manifest.json", manifest_handler)
     app.router.add_get("/api/voices", voices_handler)
     app.router.add_get("/api/presets", presets_handler)
@@ -262,6 +274,10 @@ def create_app() -> web.Application:
     web_dir = Path(__file__).parent / "web"
     if web_dir.exists():
         app.router.add_static("/static/", web_dir, name="static")
+        # Also serve studio static files
+        studio_dir = web_dir / "studio"
+        if studio_dir.exists():
+            app.router.add_static("/studio/static/", studio_dir, name="studio_static")
 
     return app
 
