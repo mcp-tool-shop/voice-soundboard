@@ -48,7 +48,15 @@ class VoiceStudio {
             drift_rate_hz: 0.5,
             iu_duration_s: 1.6,
             hnr_target_db: 20.0,
-            spectral_tilt_db: -12.0
+            spectral_tilt_db: -12.0,
+            // Naturalness params (speech imperfections)
+            speaking_style: 'conversational',
+            filler_rate: 0.025,
+            um_probability: 0.6,
+            breath_at_clause: 0.4,
+            creaky_probability: 0.3,
+            timing_jitter_ms: 8.0,
+            naturalness_pitch_drift: 6.0
         };
 
         // Pending suggestions from AI
@@ -121,7 +129,14 @@ class VoiceStudio {
             driftRate: document.getElementById('param-drift-rate'),
             iuDuration: document.getElementById('param-iu-duration'),
             hnr: document.getElementById('param-hnr'),
-            spectralTilt: document.getElementById('param-spectral-tilt')
+            spectralTilt: document.getElementById('param-spectral-tilt'),
+            // Naturalness
+            fillerRate: document.getElementById('param-filler-rate'),
+            umPreference: document.getElementById('param-um-preference'),
+            breathRate: document.getElementById('param-breath-rate'),
+            creakyRate: document.getElementById('param-creaky-rate'),
+            naturalnessTimingJitter: document.getElementById('param-timing-jitter'),
+            naturalnessPitchDrift: document.getElementById('param-pitch-drift')
         };
 
         // Parameter value displays
@@ -147,7 +162,14 @@ class VoiceStudio {
             driftRate: document.getElementById('drift-rate-value'),
             iuDuration: document.getElementById('iu-value'),
             hnr: document.getElementById('hnr-value'),
-            spectralTilt: document.getElementById('spectral-tilt-value')
+            spectralTilt: document.getElementById('spectral-tilt-value'),
+            // Naturalness
+            fillerRate: document.getElementById('filler-rate-value'),
+            umPreference: document.getElementById('um-preference-value'),
+            breathRate: document.getElementById('breath-rate-value'),
+            creakyRate: document.getElementById('creaky-rate-value'),
+            naturalnessTimingJitter: document.getElementById('timing-jitter-value'),
+            naturalnessPitchDrift: document.getElementById('pitch-drift-value')
         };
 
         this.btnResetParams = document.getElementById('btn-reset-params');
@@ -355,6 +377,15 @@ class VoiceStudio {
                 document.querySelectorAll('.phonation-chip').forEach(c => c.classList.remove('active'));
                 chip.classList.add('active');
                 this.setPhonationType(chip.dataset.phonation);
+            });
+        });
+
+        // Speaking style chips (Naturalness)
+        document.querySelectorAll('.style-chip-natural').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.style-chip-natural').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                this.setSpeakingStyle(chip.dataset.style);
             });
         });
     }
@@ -643,6 +674,49 @@ class VoiceStudio {
             });
         }
 
+        // Naturalness params - note: sliders use display values (percentages), params use decimals
+        if (this.sliders.fillerRate) {
+            // Slider is 0-8 (percent), param is 0-0.08 (decimal)
+            const fillerPercent = (params.filler_rate ?? 0.025) * 100;
+            this.sliders.fillerRate.value = fillerPercent;
+            this.updateValueDisplay('fillerRate', fillerPercent);
+        }
+        if (this.sliders.umPreference) {
+            // Slider is 0-100 (percent), param is 0-1 (decimal)
+            const umPercent = (params.um_probability ?? 0.6) * 100;
+            this.sliders.umPreference.value = umPercent;
+            this.updateValueDisplay('umPreference', umPercent);
+        }
+        if (this.sliders.breathRate) {
+            // Slider is 0-80 (percent), param is 0-0.8 (decimal)
+            const breathPercent = (params.breath_at_clause ?? 0.4) * 100;
+            this.sliders.breathRate.value = breathPercent;
+            this.updateValueDisplay('breathRate', breathPercent);
+        }
+        if (this.sliders.creakyRate) {
+            // Slider is 0-60 (percent), param is 0-0.6 (decimal)
+            const creakyPercent = (params.creaky_probability ?? 0.3) * 100;
+            this.sliders.creakyRate.value = creakyPercent;
+            this.updateValueDisplay('creakyRate', creakyPercent);
+        }
+        if (this.sliders.naturalnessTimingJitter) {
+            // Slider and param both in ms
+            this.sliders.naturalnessTimingJitter.value = params.timing_jitter_ms ?? 8.0;
+            this.updateValueDisplay('naturalnessTimingJitter', params.timing_jitter_ms ?? 8.0);
+        }
+        if (this.sliders.naturalnessPitchDrift) {
+            // Slider and param both in cents
+            this.sliders.naturalnessPitchDrift.value = params.naturalness_pitch_drift ?? 6.0;
+            this.updateValueDisplay('naturalnessPitchDrift', params.naturalness_pitch_drift ?? 6.0);
+        }
+
+        // Update speaking style chip
+        if (params.speaking_style) {
+            document.querySelectorAll('.style-chip-natural').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.style === params.speaking_style);
+            });
+        }
+
         this.updateVoiceDescription();
     }
 
@@ -711,6 +785,25 @@ class VoiceStudio {
             case 'spectralTilt':
                 display.textContent = `${Math.round(value)} dB/oct`;
                 break;
+            // Naturalness params (values already in display units from updateParams)
+            case 'fillerRate':
+                display.textContent = `${value.toFixed(1)}%`;
+                break;
+            case 'umPreference':
+                display.textContent = `${Math.round(value)}% um`;
+                break;
+            case 'breathRate':
+                display.textContent = `${Math.round(value)}%`;
+                break;
+            case 'creakyRate':
+                display.textContent = `${Math.round(value)}%`;
+                break;
+            case 'naturalnessTimingJitter':
+                display.textContent = `±${Math.round(value)} ms`;
+                break;
+            case 'naturalnessPitchDrift':
+                display.textContent = `±${Math.round(value)} ct`;
+                break;
         }
     }
 
@@ -748,12 +841,30 @@ class VoiceStudio {
             driftRate: 'drift_rate_hz',
             iuDuration: 'iu_duration_s',
             hnr: 'hnr_target_db',
-            spectralTilt: 'spectral_tilt_db'
+            spectralTilt: 'spectral_tilt_db',
+            // Naturalness
+            fillerRate: 'filler_rate',
+            umPreference: 'um_probability',
+            breathRate: 'breath_at_clause',
+            creakyRate: 'creaky_probability',
+            naturalnessTimingJitter: 'timing_jitter_ms',
+            naturalnessPitchDrift: 'naturalness_pitch_drift'
         };
 
         const paramName = paramMap[key];
         if (paramName) {
-            this.send('studio_adjust', { [paramName]: value });
+            // Convert display values to param values for naturalness sliders
+            let paramValue = value;
+            if (key === 'fillerRate') {
+                // Slider is 0-8%, param is 0-0.08
+                paramValue = value / 100;
+            } else if (key === 'umPreference' || key === 'breathRate' || key === 'creakyRate') {
+                // Slider is 0-100/80/60%, param is 0-1/0.8/0.6
+                paramValue = value / 100;
+            }
+            // naturalnessTimingJitter and naturalnessPitchDrift are already in the right units (ms, ct)
+
+            this.send('studio_adjust', { [paramName]: paramValue });
         }
     }
 
@@ -797,6 +908,74 @@ class VoiceStudio {
 
         this.params.phonation_type = phonation;
         this.send('studio_adjust', { phonation_type: phonation });
+    }
+
+    // Set speaking style (Naturalness)
+    setSpeakingStyle(style) {
+        if (!this.sessionId) {
+            this.showToast('Start a session first', 'warning');
+            return;
+        }
+
+        this.params.speaking_style = style;
+        this.send('studio_adjust', { speaking_style: style });
+
+        // Speaking styles auto-adjust naturalness parameters based on research
+        const stylePresets = {
+            conversational: {
+                filler_rate: 0.025,     // 2.5% - moderate fillers
+                um_probability: 0.6,
+                breath_at_clause: 0.4,
+                creaky_probability: 0.3,
+                timing_jitter_ms: 8.0,
+                naturalness_pitch_drift: 6.0
+            },
+            formal: {
+                filler_rate: 0.01,      // 1% - minimal fillers
+                um_probability: 0.5,
+                breath_at_clause: 0.2,
+                creaky_probability: 0.1,
+                timing_jitter_ms: 4.0,
+                naturalness_pitch_drift: 3.0
+            },
+            storytelling: {
+                filler_rate: 0.015,     // 1.5% - light fillers
+                um_probability: 0.55,
+                breath_at_clause: 0.5,
+                creaky_probability: 0.35,
+                timing_jitter_ms: 10.0,
+                naturalness_pitch_drift: 8.0
+            },
+            casual: {
+                filler_rate: 0.04,      // 4% - more fillers
+                um_probability: 0.65,
+                breath_at_clause: 0.45,
+                creaky_probability: 0.4,
+                timing_jitter_ms: 12.0,
+                naturalness_pitch_drift: 8.0
+            },
+            nervous: {
+                filler_rate: 0.06,      // 6% - lots of fillers
+                um_probability: 0.7,
+                breath_at_clause: 0.6,
+                creaky_probability: 0.2,
+                timing_jitter_ms: 15.0,
+                naturalness_pitch_drift: 10.0
+            },
+            excited: {
+                filler_rate: 0.02,      // 2% - some fillers
+                um_probability: 0.55,
+                breath_at_clause: 0.35,
+                creaky_probability: 0.15,
+                timing_jitter_ms: 6.0,
+                naturalness_pitch_drift: 12.0
+            }
+        };
+
+        if (stylePresets[style]) {
+            // Send batch adjustment
+            this.send('studio_adjust', stylePresets[style]);
+        }
     }
 
     resetParams() {

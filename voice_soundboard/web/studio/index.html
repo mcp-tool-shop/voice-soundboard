@@ -829,6 +829,126 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Naturalness Section (Speech Imperfections) -->
+                    <div class="card-section naturalness-section collapsed" id="naturalness-params">
+                        <div class="section-header clickable" onclick="toggleSection('naturalness-params')">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/>
+                                    <line x1="16" y1="8" x2="2" y2="22"/>
+                                    <line x1="17.5" y1="15" x2="9" y2="15"/>
+                                </svg>
+                                Naturalness
+                            </h3>
+                            <span class="badge badge-natural">HUMAN</span>
+                            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </div>
+                        <div class="section-body naturalness-body">
+                            <p class="section-intro">Add subtle imperfections for human-like speech</p>
+
+                            <!-- Speaking Style -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Speaking Style</label>
+                                </div>
+                                <div class="style-chips">
+                                    <button class="style-chip-natural active" data-style="conversational" title="Natural casual speech">Conversational</button>
+                                    <button class="style-chip-natural" data-style="formal" title="Professional, fewer hesitations">Formal</button>
+                                    <button class="style-chip-natural" data-style="storytelling" title="Expressive narration">Storytelling</button>
+                                    <button class="style-chip-natural" data-style="casual" title="Relaxed, more fillers">Casual</button>
+                                    <button class="style-chip-natural" data-style="nervous" title="Anxious, hesitant">Nervous</button>
+                                    <button class="style-chip-natural" data-style="excited" title="Fast, energetic">Excited</button>
+                                </div>
+                            </div>
+
+                            <!-- Filled Pauses (um/uh) -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Filled Pauses</label>
+                                    <span id="filler-rate-value" class="param-value">2.5%</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">None</span>
+                                    <input type="range" id="param-filler-rate" class="slider" min="0" max="8" step="0.5" value="2.5">
+                                    <span class="param-max">Frequent</span>
+                                </div>
+                                <span class="param-hint">Add "um" and "uh" at natural break points (2-3% is subtle)</span>
+                            </div>
+
+                            <!-- Um vs Uh Preference -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Filler Preference</label>
+                                    <span id="um-preference-value" class="param-value">60% um</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">Uh</span>
+                                    <input type="range" id="param-um-preference" class="slider" min="0" max="100" step="10" value="60">
+                                    <span class="param-max">Um</span>
+                                </div>
+                                <span class="param-hint">"Um" signals longer pauses, "uh" for brief hesitations</span>
+                            </div>
+
+                            <!-- Breath Sounds -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Breath Sounds</label>
+                                    <span id="breath-rate-value" class="param-value">40%</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">None</span>
+                                    <input type="range" id="param-breath-rate" class="slider" min="0" max="80" step="5" value="40">
+                                    <span class="param-max">Frequent</span>
+                                </div>
+                                <span class="param-hint">Contextual breaths before long phrases</span>
+                            </div>
+
+                            <!-- Phrase-Final Creaky Voice -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Sentence Endings</label>
+                                    <span id="creaky-rate-value" class="param-value">30%</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">Clean</span>
+                                    <input type="range" id="param-creaky-rate" class="slider" min="0" max="60" step="5" value="30">
+                                    <span class="param-max">Creaky</span>
+                                </div>
+                                <span class="param-hint">Vocal fry at phrase endings (common in casual speech)</span>
+                            </div>
+
+                            <!-- Micro-Timing Jitter -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Timing Variation</label>
+                                    <span id="timing-jitter-value" class="param-value">8 ms</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">Precise</span>
+                                    <input type="range" id="param-timing-jitter" class="slider" min="0" max="20" step="1" value="8">
+                                    <span class="param-max">Loose</span>
+                                </div>
+                                <span class="param-hint">Random timing shifts at word boundaries</span>
+                            </div>
+
+                            <!-- Pitch Micro-Drift -->
+                            <div class="param-group">
+                                <div class="param-header">
+                                    <label class="param-label">Pitch Drift</label>
+                                    <span id="pitch-drift-value" class="param-value">6 ct</span>
+                                </div>
+                                <div class="param-slider-row">
+                                    <span class="param-min">Steady</span>
+                                    <input type="range" id="param-pitch-drift" class="slider" min="0" max="15" step="1" value="6">
+                                    <span class="param-max">Wandering</span>
+                                </div>
+                                <span class="param-hint">Subtle pitch variations within words</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </aside>
         </main>

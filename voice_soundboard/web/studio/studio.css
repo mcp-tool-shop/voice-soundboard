@@ -1406,6 +1406,12 @@ body {
     color: white;
 }
 
+/* Human/Natural Badge */
+.badge-natural {
+    background: linear-gradient(135deg, #10b981, #06b6d4);
+    color: white;
+}
+
 /* Section intro text */
 .section-intro {
     font-size: 11px;
@@ -1526,6 +1532,58 @@ body {
     background: rgba(99, 102, 241, 0.05);
     border-radius: var(--radius-md);
     border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+/* ===== Naturalness Section Styles ===== */
+.naturalness-section .section-body {
+    border-left: 2px solid #10b981;
+}
+
+/* Naturalness style chips */
+.style-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
+}
+
+.style-chip-natural {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.style-chip-natural:hover {
+    color: var(--text-primary);
+    background: rgba(16, 185, 129, 0.1);
+    border-color: #10b981;
+}
+
+.style-chip-natural.active {
+    background: linear-gradient(135deg, #10b981, #06b6d4);
+    color: white;
+    border-color: transparent;
+}
+
+/* Naturalness section icon colors */
+.naturalness-section h3 svg {
+    color: #10b981;
+}
+
+/* Subtle highlight for naturalness params */
+.naturalness-body .param-group {
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.naturalness-body .param-group:last-child {
+    border-bottom: none;
 }
 
 .rhythm-group .param-label {
