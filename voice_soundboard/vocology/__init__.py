@@ -116,6 +116,14 @@ from voice_soundboard.vocology.presets import (
     apply_elderly,
 )
 
+from voice_soundboard.vocology.naturalness import (
+    NaturalSpeechProcessor,
+    NaturalnessConfig,
+    ProcessedText,
+    FillerType,
+    humanize_text,
+)
+
 __all__ = [
     # Voice Quality Parameters
     "VoiceQualityMetrics",
@@ -190,4 +198,10 @@ __all__ = [
     "apply_authority",
     "apply_young",
     "apply_elderly",
+    # Natural Speech Humanization
+    "NaturalSpeechProcessor",
+    "NaturalnessConfig",
+    "ProcessedText",
+    "FillerType",
+    "humanize_text",
 ]
