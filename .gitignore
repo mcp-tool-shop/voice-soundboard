@@ -158,6 +158,7 @@ test_*.wav
 # OS files
 .DS_Store
 Thumbs.db
+nul
 
 # Claude Code
 .claude/
