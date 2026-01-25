@@ -68,6 +68,11 @@ packages = ["voice_soundboard"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+# Exclude generated/batch tests by default - run with: pytest -m generated
+addopts = "-m 'not generated' --ignore=tests/generated"
+markers = [
+    "generated: marks tests as auto-generated (run with pytest -m generated)",
+]
 
 [tool.pyright]
 pythonVersion = "3.10"
