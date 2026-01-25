@@ -17,6 +17,11 @@ from mcp.types import Tool, TextContent
 
 from voice_soundboard.engine import VoiceEngine
 from voice_soundboard.config import KOKORO_VOICES, VOICE_PRESETS
+from voice_soundboard.errors import (
+    error_response, success_response, exception_to_error,
+    missing_param, not_found, invalid_value,
+    ErrorCode,
+)
 from voice_soundboard.audio import play_audio, stop_playback, get_audio_duration
 from voice_soundboard.interpreter import interpret_style, apply_style_to_params
 from voice_soundboard.effects import get_effect, list_effects, EFFECTS
@@ -93,6 +98,15 @@ if CHATTERBOX_AVAILABLE:
 
 # Voice Preset Catalog
 from voice_soundboard.presets import get_catalog, PresetCatalog
+
+# Screenshot tools
+from voice_soundboard.mcp_screenshot import (
+    take_screenshot,
+    open_snipping_tool,
+    start_screen_recording,
+    stop_screen_recording,
+    list_captures,
+)
 
 
 # Global engine instances (lazy loaded)
@@ -1754,6 +1768,85 @@ async def list_tools() -> list[Tool]:
             description="Get current studio session status including active parameters and can_undo/can_redo state.",
             inputSchema={"type": "object", "properties": {}}
         ),
+        # Screenshot and screen recording tools
+        Tool(
+            name="screenshot",
+            description=(
+                "Take a screenshot of the full screen or a specific window. "
+                "Returns path to the saved image file."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "region": {
+                        "type": "string",
+                        "enum": ["full", "window"],
+                        "description": "Capture region: 'full' for full screen, 'window' for specific window"
+                    },
+                    "window_title": {
+                        "type": "string",
+                        "description": "Window title to capture (required when region='window')"
+                    },
+                    "output_path": {
+                        "type": "string",
+                        "description": "Optional path to save screenshot (auto-generated if not provided)"
+                    }
+                }
+            }
+        ),
+        Tool(
+            name="snipping_tool",
+            description=(
+                "Open Windows Snipping Tool for manual screen capture. "
+                "User can then select a region to capture."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "mode": {
+                        "type": "string",
+                        "enum": ["rectangular", "freeform", "window", "fullscreen"],
+                        "description": "Snipping mode (default: rectangular)"
+                    }
+                }
+            }
+        ),
+        Tool(
+            name="start_recording",
+            description=(
+                "Start screen recording using FFmpeg. "
+                "Call stop_recording to stop. Requires FFmpeg installed."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "output_path": {
+                        "type": "string",
+                        "description": "Path to save recording (auto-generated if not provided)"
+                    },
+                    "fps": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 60,
+                        "description": "Frames per second (default: 30)"
+                    },
+                    "duration": {
+                        "type": "integer",
+                        "description": "Max duration in seconds (optional, stops automatically)"
+                    }
+                }
+            }
+        ),
+        Tool(
+            name="stop_recording",
+            description="Stop the current screen recording.",
+            inputSchema={"type": "object", "properties": {}}
+        ),
+        Tool(
+            name="list_captures",
+            description="List all captured screenshots and recordings with paths and timestamps.",
+            inputSchema={"type": "object", "properties": {}}
+        ),
     ]
 
 
@@ -1903,15 +1996,30 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         return await handle_studio_redo(arguments)
     elif name == "studio_status":
         return await handle_studio_status(arguments)
+    # Screenshot tools
+    elif name == "screenshot":
+        return await handle_screenshot(arguments)
+    elif name == "snipping_tool":
+        return await handle_snipping_tool(arguments)
+    elif name == "start_recording":
+        return await handle_start_recording(arguments)
+    elif name == "stop_recording":
+        return await handle_stop_recording(arguments)
+    elif name == "list_captures":
+        return await handle_list_captures(arguments)
     else:
-        return [TextContent(type="text", text=f"Unknown tool: {name}")]
+        return error_response(
+            ErrorCode.UNKNOWN_TOOL,
+            f"Unknown tool: {name}",
+            hint="Use list_tools to see available tools.",
+        )
 
 
 async def handle_speak(args: dict[str, Any]) -> list[TextContent]:
     """Generate speech from text."""
     text = args.get("text", "")
     if not text:
-        return [TextContent(type="text", text="Error: 'text' is required")]
+        return missing_param("text")
 
     style = args.get("style")
     voice = args.get("voice")
@@ -1936,17 +2044,18 @@ async def handle_speak(args: dict[str, Any]) -> list[TextContent]:
         if should_play:
             await asyncio.to_thread(play_audio, result.audio_path)
 
-        response = (
-            f"Generated speech:\n"
-            f"  File: {result.audio_path}\n"
-            f"  Voice: {result.voice_used}\n"
-            f"  Duration: {result.duration_seconds:.2f}s\n"
-            f"  Speed: {result.realtime_factor:.1f}x realtime"
+        return success_response(
+            data={
+                "file": str(result.audio_path),
+                "voice": result.voice_used,
+                "duration_seconds": round(result.duration_seconds, 2),
+                "realtime_factor": round(result.realtime_factor, 1),
+            },
+            message="Speech generated successfully",
         )
-        return [TextContent(type="text", text=response)]
 
     except Exception as e:
-        return [TextContent(type="text", text=f"Error generating speech: {e}")]
+        return exception_to_error(e, ErrorCode.SYNTHESIS_FAILED, "Speech generation")
 
 
 async def handle_list_voices(args: dict[str, Any]) -> list[TextContent]:
@@ -1962,59 +2071,78 @@ async def handle_list_voices(args: dict[str, Any]) -> list[TextContent]:
         if filter_accent and info.get("accent") != filter_accent:
             continue
 
-        voices.append(
-            f"  {voice_id}: {info['name']} ({info['gender']}, {info['accent']}, {info['style']})"
-        )
+        voices.append({
+            "id": voice_id,
+            "name": info['name'],
+            "gender": info['gender'],
+            "accent": info['accent'],
+            "style": info['style'],
+        })
 
     if not voices:
-        return [TextContent(type="text", text="No voices match the filters")]
+        return success_response(
+            data={"voices": [], "count": 0},
+            message="No voices match the filters",
+        )
 
-    response = f"Available voices ({len(voices)}):\n" + "\n".join(voices)
-    return [TextContent(type="text", text=response)]
+    return success_response(
+        data={"voices": voices, "count": len(voices)},
+        message=f"Found {len(voices)} voices",
+    )
 
 
 async def handle_list_presets(args: dict[str, Any]) -> list[TextContent]:
     """List voice presets."""
-    lines = ["Voice presets:"]
+    presets = []
     for name, config in VOICE_PRESETS.items():
-        lines.append(
-            f"  {name}: {config['description']} (voice: {config['voice']}, speed: {config.get('speed', 1.0)})"
-        )
-    return [TextContent(type="text", text="\n".join(lines))]
+        presets.append({
+            "id": name,
+            "description": config['description'],
+            "voice": config['voice'],
+            "speed": config.get('speed', 1.0),
+        })
+
+    return success_response(
+        data={"presets": presets, "count": len(presets)},
+        message=f"Found {len(presets)} presets",
+    )
 
 
 async def handle_play_audio(args: dict[str, Any]) -> list[TextContent]:
     """Play an audio file."""
     path = args.get("path")
     if not path:
-        return [TextContent(type="text", text="Error: 'path' is required")]
+        return missing_param("path")
 
     path = Path(path)
     if not path.exists():
-        return [TextContent(type="text", text=f"Error: File not found: {path}")]
+        return not_found("file", path.name)
 
     try:
         duration = get_audio_duration(path)
         await asyncio.to_thread(play_audio, path)
-        return [TextContent(type="text", text=f"Played: {path.name} ({duration:.2f}s)")]
+        return success_response(
+            data={"file": path.name, "duration_seconds": round(duration, 2)},
+            message="Audio played successfully",
+        )
     except Exception as e:
-        return [TextContent(type="text", text=f"Error playing audio: {e}")]
+        return exception_to_error(e, ErrorCode.PLAYBACK_FAILED, "Audio playback")
 
 
 async def handle_stop_audio(args: dict[str, Any]) -> list[TextContent]:
     """Stop audio playback."""
     try:
         stop_playback()
-        return [TextContent(type="text", text="Audio playback stopped")]
+        return success_response(message="Audio playback stopped")
     except Exception as e:
-        return [TextContent(type="text", text=f"Error stopping audio: {e}")]
+        return exception_to_error(e, ErrorCode.PLAYBACK_FAILED, "Stop playback")
 
 
 async def handle_sound_effect(args: dict[str, Any]) -> list[TextContent]:
     """Play or save a sound effect."""
     effect_name = args.get("effect", "")
     if not effect_name:
-        return [TextContent(type="text", text="Error: 'effect' is required")]
+        return missing_param("effect")
 
     save_path = args.get("save_path")
 
@@ -2024,44 +2152,50 @@ async def handle_sound_effect(args: dict[str, Any]) -> list[TextContent]:
         if save_path:
             path = Path(save_path)
             effect.save(path)
-            return [TextContent(type="text", text=f"Saved effect '{effect_name}' to: {path}")]
+            return success_response(
+                data={"effect": effect_name, "saved_to": str(path)},
+                message=f"Effect '{effect_name}' saved successfully",
+            )
         else:
             # Play the effect
             await asyncio.to_thread(effect.play)
-            return [TextContent(type="text", text=f"Played effect: {effect_name} ({effect.duration:.2f}s)")]
+            return success_response(
+                data={"effect": effect_name, "duration_seconds": round(effect.duration, 2)},
+                message="Effect played successfully",
+            )
 
     except ValueError as e:
-        return [TextContent(type="text", text=str(e))]
+        return not_found("effect", effect_name)
     except Exception as e:
-        return [TextContent(type="text", text=f"Error with sound effect: {e}")]
+        return exception_to_error(e, ErrorCode.PLAYBACK_FAILED, "Sound effect")
 
 
 async def handle_list_effects(args: dict[str, Any]) -> list[TextContent]:
     """List all available sound effects."""
-    effects = list_effects()
-
     categories = {
-        "Chimes": ["chime", "chime_success", "chime_error", "chime_attention"],
-        "UI": ["click", "pop", "whoosh"],
-        "Alerts": ["alert_warning", "alert_critical", "alert_info"],
-        "Ambient": ["rain", "white_noise", "drone"],
+        "chimes": ["chime", "chime_success", "chime_error", "chime_attention"],
+        "ui": ["click", "pop", "whoosh"],
+        "alerts": ["alert_warning", "alert_critical", "alert_info"],
+        "ambient": ["rain", "white_noise", "drone"],
     }
 
-    lines = ["Available sound effects:"]
+    effects_list = []
     for category, items in categories.items():
-        lines.append(f"\n  {category}:")
         for item in items:
             if item in EFFECTS:
-                lines.append(f"    - {item}")
+                effects_list.append({"id": item, "category": category})
 
-    return [TextContent(type="text", text="\n".join(lines))]
+    return success_response(
+        data={"effects": effects_list, "count": len(effects_list)},
+        message=f"Found {len(effects_list)} effects",
+    )
 
 
 async def handle_speak_long(args: dict[str, Any]) -> list[TextContent]:
     """Stream speech for long text."""
     text = args.get("text", "")
     if not text:
-        return [TextContent(type="text", text="Error: 'text' is required")]
+        return missing_param("text")
 
     voice = args.get("voice")
     preset = args.get("preset")
@@ -2089,25 +2223,26 @@ async def handle_speak_long(args: dict[str, Any]) -> list[TextContent]:
         if should_play:
             await asyncio.to_thread(play_audio, result.audio_path)
 
-        response = (
-            f"Streamed speech:\n"
-            f"  File: {result.audio_path}\n"
-            f"  Voice: {result.voice_used}\n"
-            f"  Duration: {result.total_duration:.2f}s\n"
-            f"  Chunks: {result.total_chunks}\n"
-            f"  Gen time: {result.generation_time:.2f}s"
+        return success_response(
+            data={
+                "file": str(result.audio_path),
+                "voice": result.voice_used,
+                "duration_seconds": round(result.total_duration, 2),
+                "chunks": result.total_chunks,
+                "generation_time_seconds": round(result.generation_time, 2),
+            },
+            message="Speech streamed successfully",
         )
-        return [TextContent(type="text", text=response)]
 
     except Exception as e:
-        return [TextContent(type="text", text=f"Error streaming speech: {e}")]
+        return exception_to_error(e, ErrorCode.SYNTHESIS_FAILED, "Speech streaming")
 
 
 async def handle_speak_ssml(args: dict[str, Any]) -> list[TextContent]:
     """Speak text with SSML markup."""
     ssml = args.get("ssml", "")
     if not ssml:
-        return [TextContent(type="text", text="Error: 'ssml' is required")]
+        return missing_param("ssml")
 
     voice = args.get("voice")
     preset = args.get("preset")
@@ -4556,6 +4691,112 @@ async def handle_studio_status(args: dict[str, Any]) -> list[TextContent]:
 
     except Exception as e:
         return [TextContent(type="text", text=f"Error getting status: {e}")]
+
+
+# Screenshot handlers
+
+async def handle_screenshot(args: dict[str, Any]) -> list[TextContent]:
+    """Take a screenshot."""
+    region = args.get("region", "full")
+    window_title = args.get("window_title")
+    output_path = args.get("output_path")
+
+    try:
+        result = take_screenshot(
+            region=region,
+            output_path=output_path,
+            window_title=window_title
+        )
+
+        if result.get("success"):
+            return [TextContent(
+                type="text",
+                text=f"Screenshot captured!\n  Path: {result['path']}"
+            )]
+        else:
+            return [TextContent(type="text", text=f"Screenshot failed: {result.get('error', 'Unknown error')}")]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error taking screenshot: {e}")]
+
+
+async def handle_snipping_tool(args: dict[str, Any]) -> list[TextContent]:
+    """Open Windows Snipping Tool."""
+    mode = args.get("mode", "rectangular")
+
+    try:
+        result = open_snipping_tool(mode=mode)
+
+        if result.get("success"):
+            return [TextContent(type="text", text=result["message"])]
+        else:
+            return [TextContent(type="text", text=f"Failed to open Snipping Tool: {result.get('error')}")]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error opening Snipping Tool: {e}")]
+
+
+async def handle_start_recording(args: dict[str, Any]) -> list[TextContent]:
+    """Start screen recording."""
+    output_path = args.get("output_path")
+    fps = args.get("fps", 30)
+    duration = args.get("duration")
+
+    try:
+        result = start_screen_recording(
+            output_path=output_path,
+            fps=fps,
+            duration=duration
+        )
+
+        if result.get("success"):
+            return [TextContent(
+                type="text",
+                text=f"Recording started!\n  PID: {result['pid']}\n  Output: {result['output_path']}\n\nCall stop_recording to stop."
+            )]
+        else:
+            return [TextContent(type="text", text=f"Recording failed: {result.get('error')}")]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error starting recording: {e}")]
+
+
+async def handle_stop_recording(args: dict[str, Any]) -> list[TextContent]:
+    """Stop screen recording."""
+    try:
+        result = stop_screen_recording()
+
+        if result.get("success"):
+            return [TextContent(type="text", text=result["message"])]
+        else:
+            return [TextContent(type="text", text=f"Stop failed: {result.get('error')}")]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error stopping recording: {e}")]
+
+
+async def handle_list_captures(args: dict[str, Any]) -> list[TextContent]:
+    """List captured screenshots and recordings."""
+    try:
+        result = list_captures()
+
+        lines = [
+            f"Captures Directory: {result['captures_dir']}",
+            f"Total: {result['count']} files\n"
+        ]
+
+        for cap in result["captures"]:
+            size_kb = cap["size"] / 1024
+            lines.append(f"  [{cap['type']}] {cap['name']} ({size_kb:.1f} KB)")
+            lines.append(f"           {cap['created']}")
+
+        if not result["captures"]:
+            lines.append("  No captures found.")
+
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error listing captures: {e}")]
 
 
 async def main():

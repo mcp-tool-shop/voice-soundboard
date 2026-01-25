@@ -5,9 +5,10 @@ Tests cover:
 - Tool handler functions
 - Tool listing and schemas
 - Error handling
-- Response formatting
+- Response formatting (structured JSON responses)
 """
 
+import json
 import pytest
 import asyncio
 from pathlib import Path
@@ -16,6 +17,13 @@ from unittest.mock import Mock, patch, MagicMock, AsyncMock
 from mcp.types import TextContent
 
 from voice_soundboard.config import KOKORO_VOICES, VOICE_PRESETS
+
+
+def parse_response(result):
+    """Parse MCP TextContent result to JSON dict."""
+    assert len(result) == 1
+    assert isinstance(result[0], TextContent)
+    return json.loads(result[0].text)
 
 
 class TestServerEngineSingletons:
@@ -59,11 +67,11 @@ class TestHandleListVoices:
         from voice_soundboard.server import handle_list_voices
 
         result = await handle_list_voices({})
+        data = parse_response(result)
 
-        assert len(result) == 1
-        assert isinstance(result[0], TextContent)
-        assert "Available voices" in result[0].text
-        assert "50" in result[0].text  # 50 voices
+        assert data["ok"] is True
+        assert "voices" in data["data"]
+        assert data["data"]["count"] == 50  # 50 voices
 
     @pytest.mark.asyncio
     async def test_list_voices_filter_gender(self):
@@ -71,10 +79,12 @@ class TestHandleListVoices:
         from voice_soundboard.server import handle_list_voices
 
         result = await handle_list_voices({"filter_gender": "female"})
+        data = parse_response(result)
 
-        assert len(result) == 1
+        assert data["ok"] is True
         # All results should be female
-        assert "female" in result[0].text.lower()
+        for voice in data["data"]["voices"]:
+            assert voice["gender"] == "female"
 
     @pytest.mark.asyncio
     async def test_list_voices_no_matches(self):
@@ -85,8 +95,11 @@ class TestHandleListVoices:
             "filter_gender": "female",
             "filter_accent": "nonexistent"
         })
+        data = parse_response(result)
 
-        assert "No voices match the filters" in result[0].text
+        assert data["ok"] is True
+        assert data["data"]["count"] == 0
+        assert data["data"]["voices"] == []
 
 
 class TestHandleListPresets:
@@ -98,11 +111,14 @@ class TestHandleListPresets:
         from voice_soundboard.server import handle_list_presets
 
         result = await handle_list_presets({})
+        data = parse_response(result)
 
-        assert len(result) == 1
-        assert "Voice presets" in result[0].text
-        assert "narrator" in result[0].text
-        assert "assistant" in result[0].text
+        assert data["ok"] is True
+        assert "presets" in data["data"]
+        # Check for expected presets
+        preset_ids = [p["id"] for p in data["data"]["presets"]]
+        assert "narrator" in preset_ids
+        assert "assistant" in preset_ids
 
 
 class TestHandleListEffects:
@@ -114,10 +130,13 @@ class TestHandleListEffects:
         from voice_soundboard.server import handle_list_effects
 
         result = await handle_list_effects({})
+        data = parse_response(result)
 
-        assert len(result) == 1
-        assert "sound effects" in result[0].text.lower()
-        assert "chime" in result[0].text
+        assert data["ok"] is True
+        assert "effects" in data["data"]
+        # Check for expected effect
+        effect_ids = [e["id"] for e in data["data"]["effects"]]
+        assert "chime" in effect_ids
 
 
 class TestHandleListEmotions:
@@ -144,9 +163,11 @@ class TestHandleSpeak:
         from voice_soundboard.server import handle_speak
 
         result = await handle_speak({})
+        data = parse_response(result)
 
-        assert "Error" in result[0].text
-        assert "'text' is required" in result[0].text
+        assert data["ok"] is False
+        assert data["error"]["code"] == "missing_required"
+        assert "'text'" in data["error"]["message"]
 
     @pytest.mark.asyncio
     async def test_speak_success(self):
@@ -164,9 +185,11 @@ class TestHandleSpeak:
 
         with patch.object(server, 'get_engine', return_value=mock_engine):
             result = await server.handle_speak({"text": "Hello world"})
+            data = parse_response(result)
 
-        assert "Generated speech" in result[0].text
-        assert "af_bella" in result[0].text
+        assert data["ok"] is True
+        assert data["data"]["voice"] == "af_bella"
+        assert data["data"]["duration_seconds"] == 1.5
 
     @pytest.mark.asyncio
     async def test_speak_with_style(self):
@@ -188,8 +211,10 @@ class TestHandleSpeak:
                 "text": "Hello world",
                 "style": "warmly"
             })
+            data = parse_response(result)
 
-        assert "Generated speech" in result[0].text
+        assert data["ok"] is True
+        assert data["data"]["voice"] == "af_bella"
 
 
 class TestHandleSoundEffect:
@@ -201,9 +226,11 @@ class TestHandleSoundEffect:
         from voice_soundboard.server import handle_sound_effect
 
         result = await handle_sound_effect({})
+        data = parse_response(result)
 
-        assert "Error" in result[0].text
-        assert "'effect' is required" in result[0].text
+        assert data["ok"] is False
+        assert data["error"]["code"] == "missing_required"
+        assert "'effect'" in data["error"]["message"]
 
     @pytest.mark.asyncio
     async def test_sound_effect_invalid_name(self):
@@ -211,9 +238,11 @@ class TestHandleSoundEffect:
         from voice_soundboard.server import handle_sound_effect
 
         result = await handle_sound_effect({"effect": "nonexistent_effect"})
+        data = parse_response(result)
 
         # Should return error about unknown effect
-        assert any(word in result[0].text.lower() for word in ["error", "unknown", "invalid"])
+        assert data["ok"] is False
+        assert data["error"]["code"] == "effect_not_found"
 
 
 class TestHandlePlayAudio:
@@ -225,9 +254,11 @@ class TestHandlePlayAudio:
         from voice_soundboard.server import handle_play_audio
 
         result = await handle_play_audio({})
+        data = parse_response(result)
 
-        assert "Error" in result[0].text
-        assert "'path' is required" in result[0].text
+        assert data["ok"] is False
+        assert data["error"]["code"] == "missing_required"
+        assert "'path'" in data["error"]["message"]
 
     @pytest.mark.asyncio
     async def test_play_audio_file_not_found(self):
@@ -235,9 +266,10 @@ class TestHandlePlayAudio:
         from voice_soundboard.server import handle_play_audio
 
         result = await handle_play_audio({"path": "/nonexistent/audio.wav"})
+        data = parse_response(result)
 
-        assert "Error" in result[0].text
-        assert "not found" in result[0].text.lower()
+        assert data["ok"] is False
+        assert data["error"]["code"] == "file_not_found"
 
 
 class TestHandleStopAudio:
@@ -250,8 +282,10 @@ class TestHandleStopAudio:
 
         with patch.object(server, 'stop_playback'):
             result = await server.handle_stop_audio({})
+            data = parse_response(result)
 
-        assert "stopped" in result[0].text.lower()
+        assert data["ok"] is True
+        assert "stopped" in data["message"].lower()
 
 
 class TestCallTool:
@@ -263,8 +297,10 @@ class TestCallTool:
         from voice_soundboard.server import call_tool
 
         result = await call_tool("nonexistent_tool", {})
+        data = parse_response(result)
 
-        assert "Unknown tool" in result[0].text
+        assert data["ok"] is False
+        assert data["error"]["code"] == "unknown_tool"
 
     @pytest.mark.asyncio
     async def test_call_tool_routes_correctly(self):
@@ -273,8 +309,10 @@ class TestCallTool:
 
         # Test routing to list_presets
         result = await server.call_tool("list_presets", {})
+        data = parse_response(result)
 
-        assert "Voice presets" in result[0].text
+        assert data["ok"] is True
+        assert "presets" in data["data"]
 
 
 class TestHandleSpeakSSML:
@@ -286,9 +324,11 @@ class TestHandleSpeakSSML:
         from voice_soundboard.server import handle_speak_ssml
 
         result = await handle_speak_ssml({})
+        data = parse_response(result)
 
-        assert "Error" in result[0].text
-        assert "'ssml' is required" in result[0].text
+        assert data["ok"] is False
+        assert data["error"]["code"] == "missing_required"
+        assert "'ssml'" in data["error"]["message"]
 
     @pytest.mark.asyncio
     async def test_speak_ssml_success(self):
@@ -335,9 +375,11 @@ class TestHandleSpeakLong:
         from voice_soundboard.server import handle_speak_long
 
         result = await handle_speak_long({})
+        data = parse_response(result)
 
-        assert "Error" in result[0].text
-        assert "'text' is required" in result[0].text
+        assert data["ok"] is False
+        assert data["error"]["code"] == "missing_required"
+        assert "'text'" in data["error"]["message"]
 
 
 class TestListTools:
@@ -444,9 +486,10 @@ class TestErrorHandling:
 
         with patch.object(server, 'get_engine', return_value=mock_engine):
             result = await server.handle_speak({"text": "Hello"})
+            data = parse_response(result)
 
-        assert "Error" in result[0].text
-        assert "generating speech" in result[0].text.lower()
+        assert data["ok"] is False
+        assert data["error"]["code"] in ["synthesis_failed", "internal_error"]
 
     @pytest.mark.asyncio
     async def test_sound_effect_handles_play_error(self):
@@ -459,8 +502,10 @@ class TestErrorHandling:
 
         with patch.object(server, 'get_effect', return_value=mock_effect):
             result = await server.handle_sound_effect({"effect": "chime"})
+            data = parse_response(result)
 
-        assert "Error" in result[0].text
+        assert data["ok"] is False
+        assert "error" in data
 
 
 class TestEmotionToolHandlers:
