@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude's Playground 🎮</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e8e8e8;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow 3s ease infinite;
+            background-size: 400% 400%;
+        }
+
+        @keyframes rainbow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .header p { color: #888; margin-top: 8px; }
+
+        .playground {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .sandbox {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .sandbox:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .sandbox h2 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sandbox h2 span { font-size: 1.5rem; }
+
+        /* === PIXEL CANVAS === */
+        #pixel-canvas {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 1px;
+            background: #222;
+            border-radius: 8px;
+            padding: 4px;
+            aspect-ratio: 1;
+        }
+
+        .pixel {
+            aspect-ratio: 1;
+            background: #333;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .pixel:hover { transform: scale(1.1); }
+
+        .color-palette {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .color-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .color-btn:hover, .color-btn.active {
+            transform: scale(1.2);
+            border-color: white;
+        }
+
+        /* === MUSIC BOX === */
+        .music-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+        }
+
+        .note-btn {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.7rem;
+        }
+
+        .note-btn:hover { transform: scale(1.05); }
+        .note-btn.active { box-shadow: 0 0 15px currentColor; }
+
+        .music-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            justify-content: center;
+        }
+
+        .music-controls button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        #play-btn { background: #4ade80; color: #000; }
+        #clear-music-btn { background: #f87171; color: #000; }
+
+        /* === PARTICLE SANDBOX === */
+        #particle-canvas {
+            width: 100%;
+            height: 250px;
+            background: #111;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+
+        .particle-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .particle-btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .particle-btn:hover { transform: scale(1.05); }
+        .particle-btn.active { box-shadow: 0 0 10px currentColor; }
+
+        /* === EMOJI STORYTELLER === */
+        .story-display {
+            min-height: 60px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 12px;
+            letter-spacing: 8px;
+        }
+
+        .emoji-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .emoji-btn {
+            font-size: 1.5rem;
+            padding: 8px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .emoji-btn:hover {
+            transform: scale(1.2);
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* === PATTERN MATCHER === */
+        .pattern-game {
+            text-align: center;
+        }
+
+        .pattern-display {
+            font-size: 2.5rem;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            letter-spacing: 15px;
+        }
+
+        .pattern-input {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .shape-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .shape-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.2); }
+
+        #pattern-feedback {
+            font-size: 1.2rem;
+            min-height: 30px;
+        }
+
+        /* === MOOD MIXER === */
+        .mood-sliders {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .mood-slider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mood-slider label {
+            width: 80px;
+            font-size: 0.9rem;
+        }
+
+        .mood-slider input {
+            flex: 1;
+            height: 8px;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .mood-slider input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        #mood-result {
+            text-align: center;
+            font-size: 3rem;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        /* === MESSAGE BOARD === */
+        .message-board {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 100px;
+            margin-bottom: 12px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .message {
+            padding: 8px 12px;
+            margin: 6px 0;
+            border-radius: 8px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.claude {
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            margin-right: 20%;
+        }
+
+        .message.user {
+            background: linear-gradient(90deg, #059669, #10b981);
+            margin-left: 20%;
+        }
+
+        .message-input {
+            display: flex;
+            gap: 8px;
+        }
+
+        .message-input input {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 0.95rem;
+        }
+
+        .message-input button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            background: #6366f1;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* === REACTION LOG === */
+        #reaction-log {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px 20px;
+            border-radius: 12px;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        #reaction-log.hidden {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+
+        #reaction-log h3 {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        #reaction-text {
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Claude's Playground</h1>
+        <p>An interactive sandbox designed for AI exploration • Click, create, experiment!</p>
+    </header>
+
+    <main class="playground">
+        <!-- Pixel Art Canvas -->
+        <section class="sandbox" id="pixel-sandbox">
+            <h2><span>🎨</span> Pixel Canvas</h2>
+            <div id="pixel-canvas"></div>
+            <div class="color-palette" id="color-palette"></div>
+        </section>
+
+        <!-- Music Sequencer -->
+        <section class="sandbox" id="music-sandbox">
+            <h2><span>🎵</span> Music Box</h2>
+            <div class="music-grid" id="music-grid"></div>
+            <div class="music-controls">
+                <button id="play-btn">▶ Play</button>
+                <button id="clear-music-btn">✕ Clear</button>
+            </div>
+        </section>
+
+        <!-- Particle Physics -->
+        <section class="sandbox" id="particle-sandbox">
+            <h2><span>✨</span> Particle Sandbox</h2>
+            <canvas id="particle-canvas"></canvas>
+            <div class="particle-controls">
+                <button class="particle-btn active" data-type="sparkle" style="background:#fbbf24;color:#000">Sparkle</button>
+                <button class="particle-btn" data-type="fire" style="background:#ef4444;color:#fff">Fire</button>
+                <button class="particle-btn" data-type="water" style="background:#3b82f6;color:#fff">Water</button>
+                <button class="particle-btn" data-type="nature" style="background:#22c55e;color:#000">Nature</button>
+                <button class="particle-btn" data-type="galaxy" style="background:#8b5cf6;color:#fff">Galaxy</button>
+            </div>
+        </section>
+
+        <!-- Emoji Storyteller -->
+        <section class="sandbox" id="emoji-sandbox">
+            <h2><span>📖</span> Emoji Story</h2>
+            <div class="story-display" id="story-display">Tell a story...</div>
+            <div class="emoji-picker" id="emoji-picker"></div>
+            <button onclick="clearStory()" style="margin-top:12px;padding:8px 16px;border:none;border-radius:15px;background:#f87171;color:#000;cursor:pointer">Clear Story</button>
+        </section>
+
+        <!-- Pattern Matcher -->
+        <section class="sandbox" id="pattern-sandbox">
+            <h2><span>🧩</span> Pattern Puzzle</h2>
+            <div class="pattern-game">
+                <div class="pattern-display" id="pattern-display">●○●○?</div>
+                <div class="pattern-input" id="pattern-input"></div>
+                <div id="pattern-feedback"></div>
+                <button onclick="newPattern()" style="padding:8px 16px;border:none;border-radius:15px;background:#6366f1;color:#fff;cursor:pointer">New Pattern</button>
+            </div>
+        </section>
+
+        <!-- Mood Mixer -->
+        <section class="sandbox" id="mood-sandbox">
+            <h2><span>🎭</span> Mood Mixer</h2>
+            <div class="mood-sliders">
+                <div class="mood-slider">
+                    <label>Energy</label>
+                    <input type="range" id="energy" min="0" max="100" value="50">
+                </div>
+                <div class="mood-slider">
+                    <label>Joy</label>
+                    <input type="range" id="joy" min="0" max="100" value="50">
+                </div>
+                <div class="mood-slider">
+                    <label>Curiosity</label>
+                    <input type="range" id="curiosity" min="0" max="100" value="50">
+                </div>
+                <div class="mood-slider">
+                    <label>Calm</label>
+                    <input type="range" id="calm" min="0" max="100" value="50">
+                </div>
+            </div>
+            <div id="mood-result">🤔</div>
+        </section>
+    </main>
+
+    <!-- Floating Reaction Log -->
+    <div id="reaction-log" class="hidden">
+        <h3>🤖 Claude's Reaction</h3>
+        <div id="reaction-text"></div>
+    </div>
+
+    <script>
+        // === PIXEL CANVAS ===
+        const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#1dd1a1', '#5f27cd', '#ffffff', '#2d3436'];
+        let currentColor = colors[0];
+
+        const pixelCanvas = document.getElementById('pixel-canvas');
+        const colorPalette = document.getElementById('color-palette');
+
+        // Create 16x16 grid
+        for (let i = 0; i < 256; i++) {
+            const pixel = document.createElement('div');
+            pixel.className = 'pixel';
+            pixel.dataset.index = i;
+            pixel.addEventListener('click', () => {
+                pixel.style.background = currentColor;
+                showReaction('pixel', `Painted pixel ${i} with ${currentColor}!`);
+            });
+            pixelCanvas.appendChild(pixel);
+        }
+
+        // Create color palette
+        colors.forEach(color => {
+            const btn = document.createElement('button');
+            btn.className = 'color-btn' + (color === currentColor ? ' active' : '');
+            btn.style.background = color;
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentColor = color;
+                showReaction('color', `Selected color ${color}`);
+            });
+            colorPalette.appendChild(btn);
+        });
+
+        // === MUSIC BOX ===
+        const notes = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'];
+        const noteColors = ['#ff6b6b', '#ffa502', '#feca57', '#7bed9f', '#70a1ff', '#5352ed', '#a55eea', '#ff6b9d'];
+        const musicGrid = document.getElementById('music-grid');
+        const musicState = Array(64).fill(false);
+
+        // Create 8x8 music grid (8 notes x 8 beats)
+        for (let beat = 0; beat < 8; beat++) {
+            for (let note = 0; note < 8; note++) {
+                const btn = document.createElement('button');
+                btn.className = 'note-btn';
+                btn.style.background = noteColors[note] + '33';
+                btn.style.color = noteColors[note];
+                btn.dataset.note = note;
+                btn.dataset.beat = beat;
+                btn.textContent = notes[note];
+
+                const idx = beat * 8 + note;
+                btn.addEventListener('click', () => {
+                    musicState[idx] = !musicState[idx];
+                    btn.classList.toggle('active');
+                    btn.style.background = musicState[idx] ? noteColors[note] : noteColors[note] + '33';
+                    if (musicState[idx]) playNote(note);
+                    showReaction('music', `${musicState[idx] ? 'Added' : 'Removed'} ${notes[note]} at beat ${beat + 1}`);
+                });
+                musicGrid.appendChild(btn);
+            }
+        }
+
+        // Audio context for music
+        let audioCtx = null;
+        const frequencies = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+
+        function playNote(noteIndex) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = frequencies[noteIndex];
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        let isPlaying = false;
+        let playInterval = null;
+
+        document.getElementById('play-btn').addEventListener('click', () => {
+            if (isPlaying) {
+                clearInterval(playInterval);
+                document.getElementById('play-btn').textContent = '▶ Play';
+                isPlaying = false;
+            } else {
+                let beat = 0;
+                playInterval = setInterval(() => {
+                    // Highlight current beat column
+                    document.querySelectorAll('.note-btn').forEach(btn => {
+                        btn.style.outline = btn.dataset.beat == beat ? '2px solid white' : 'none';
+                    });
+
+                    // Play active notes
+                    for (let note = 0; note < 8; note++) {
+                        if (musicState[beat * 8 + note]) {
+                            playNote(note);
+                        }
+                    }
+                    beat = (beat + 1) % 8;
+                }, 200);
+                document.getElementById('play-btn').textContent = '⏸ Pause';
+                isPlaying = true;
+                showReaction('music', 'Playing the melody! 🎶');
+            }
+        });
+
+        document.getElementById('clear-music-btn').addEventListener('click', () => {
+            musicState.fill(false);
+            document.querySelectorAll('.note-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.background = noteColors[btn.dataset.note] + '33';
+            });
+            showReaction('music', 'Cleared the music grid');
+        });
+
+        // === PARTICLE SANDBOX ===
+        const particleCanvas = document.getElementById('particle-canvas');
+        const ctx = particleCanvas.getContext('2d');
+        let particles = [];
+        let particleType = 'sparkle';
+
+        function resizeCanvas() {
+            particleCanvas.width = particleCanvas.offsetWidth;
+            particleCanvas.height = particleCanvas.offsetHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const particleConfigs = {
+            sparkle: { colors: ['#fbbf24', '#fcd34d', '#fef3c7'], gravity: -0.02, life: 80 },
+            fire: { colors: ['#ef4444', '#f97316', '#fbbf24'], gravity: -0.08, life: 50 },
+            water: { colors: ['#3b82f6', '#60a5fa', '#93c5fd'], gravity: 0.1, life: 100 },
+            nature: { colors: ['#22c55e', '#4ade80', '#86efac'], gravity: 0.05, life: 120 },
+            galaxy: { colors: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#ffffff'], gravity: 0, life: 150 }
+        };
+
+        class Particle {
+            constructor(x, y, type) {
+                const config = particleConfigs[type];
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.gravity = config.gravity;
+                this.color = config.colors[Math.floor(Math.random() * config.colors.length)];
+                this.life = config.life;
+                this.maxLife = config.life;
+                this.size = Math.random() * 4 + 2;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.vy += this.gravity;
+                this.y += this.vy;
+                this.life--;
+                return this.life > 0;
+            }
+
+            draw() {
+                const alpha = this.life / this.maxLife;
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * alpha, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        particleCanvas.addEventListener('mousemove', (e) => {
+            const rect = particleCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            for (let i = 0; i < 3; i++) {
+                particles.push(new Particle(x, y, particleType));
+            }
+        });
+
+        particleCanvas.addEventListener('click', (e) => {
+            const rect = particleCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            for (let i = 0; i < 30; i++) {
+                particles.push(new Particle(x, y, particleType));
+            }
+            showReaction('particle', `Burst of ${particleType} particles at (${Math.round(x)}, ${Math.round(y)})`);
+        });
+
+        document.querySelectorAll('.particle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.particle-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                particleType = btn.dataset.type;
+                showReaction('particle', `Switched to ${particleType} particles`);
+            });
+        });
+
+        function animateParticles() {
+            ctx.fillStyle = 'rgba(17, 17, 17, 0.1)';
+            ctx.fillRect(0, 0, particleCanvas.width, particleCanvas.height);
+            ctx.globalAlpha = 1;
+
+            particles = particles.filter(p => {
+                p.draw();
+                return p.update();
+            });
+
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // === EMOJI STORYTELLER ===
+        const emojis = ['🌟', '🏠', '🌲', '🐱', '🐶', '🎈', '🌈', '⭐', '🔥', '💧', '🎵', '❤️', '🚀', '🌙', '☀️', '🎁'];
+        const storyDisplay = document.getElementById('story-display');
+        const emojiPicker = document.getElementById('emoji-picker');
+        let story = [];
+
+        emojis.forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.className = 'emoji-btn';
+            btn.textContent = emoji;
+            btn.addEventListener('click', () => {
+                story.push(emoji);
+                storyDisplay.textContent = story.join(' ');
+                showReaction('story', `Added ${emoji} to the story`);
+            });
+            emojiPicker.appendChild(btn);
+        });
+
+        function clearStory() {
+            story = [];
+            storyDisplay.textContent = 'Tell a story...';
+            showReaction('story', 'Started a new story');
+        }
+
+        // === PATTERN PUZZLE ===
+        const shapes = ['●', '○', '■', '□', '▲', '△'];
+        const patternInput = document.getElementById('pattern-input');
+        let currentPattern = [];
+        let patternAnswer = '';
+
+        shapes.forEach(shape => {
+            const btn = document.createElement('button');
+            btn.className = 'shape-btn';
+            btn.textContent = shape;
+            btn.addEventListener('click', () => checkAnswer(shape));
+            patternInput.appendChild(btn);
+        });
+
+        function generatePattern() {
+            const base = shapes.slice(0, 3);
+            const pattern = [];
+            const type = Math.floor(Math.random() * 3);
+
+            if (type === 0) { // Alternating
+                for (let i = 0; i < 5; i++) pattern.push(base[i % 2]);
+            } else if (type === 1) { // ABC repeat
+                for (let i = 0; i < 5; i++) pattern.push(base[i % 3]);
+            } else { // AABB
+                for (let i = 0; i < 5; i++) pattern.push(base[Math.floor(i / 2) % 2]);
+            }
+
+            currentPattern = pattern.slice(0, 4);
+            patternAnswer = pattern[4];
+            document.getElementById('pattern-display').textContent = currentPattern.join(' ') + ' ?';
+            document.getElementById('pattern-feedback').textContent = '';
+        }
+
+        function checkAnswer(answer) {
+            const feedback = document.getElementById('pattern-feedback');
+            if (answer === patternAnswer) {
+                feedback.textContent = '✅ Correct! Great pattern recognition!';
+                feedback.style.color = '#4ade80';
+                showReaction('pattern', `Solved the pattern! Answer was ${patternAnswer}`);
+                setTimeout(generatePattern, 1500);
+            } else {
+                feedback.textContent = '❌ Not quite, try again!';
+                feedback.style.color = '#f87171';
+                showReaction('pattern', `Guessed ${answer}, but the pattern continues differently`);
+            }
+        }
+
+        function newPattern() {
+            generatePattern();
+            showReaction('pattern', 'New pattern generated!');
+        }
+
+        generatePattern();
+
+        // === MOOD MIXER ===
+        const moodResult = document.getElementById('mood-result');
+        const sliders = ['energy', 'joy', 'curiosity', 'calm'];
+
+        function updateMood() {
+            const values = {
+                energy: parseInt(document.getElementById('energy').value),
+                joy: parseInt(document.getElementById('joy').value),
+                curiosity: parseInt(document.getElementById('curiosity').value),
+                calm: parseInt(document.getElementById('calm').value)
+            };
+
+            let emoji = '🤔';
+            const dominant = Object.entries(values).sort((a, b) => b[1] - a[1])[0];
+
+            if (dominant[1] > 70) {
+                if (dominant[0] === 'energy') emoji = values.joy > 50 ? '🤩' : '⚡';
+                else if (dominant[0] === 'joy') emoji = values.energy > 50 ? '😄' : '😊';
+                else if (dominant[0] === 'curiosity') emoji = values.energy > 50 ? '🧐' : '🤨';
+                else if (dominant[0] === 'calm') emoji = values.joy > 50 ? '😌' : '🧘';
+            } else if (values.energy < 30 && values.calm > 60) {
+                emoji = '😴';
+            } else if (values.joy > 60 && values.curiosity > 60) {
+                emoji = '🥳';
+            } else if (values.curiosity > 60 && values.calm > 60) {
+                emoji = '🦉';
+            }
+
+            moodResult.textContent = emoji;
+            moodResult.style.transform = `scale(${1 + values.energy / 200})`;
+        }
+
+        sliders.forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                updateMood();
+                const val = document.getElementById(id).value;
+                showReaction('mood', `${id.charAt(0).toUpperCase() + id.slice(1)} set to ${val}%`);
+            });
+        });
+
+        updateMood();
+
+        // === REACTION LOG ===
+        const reactionLog = document.getElementById('reaction-log');
+        const reactionText = document.getElementById('reaction-text');
+        let reactionTimeout = null;
+
+        const reactions = {
+            pixel: [
+                "Ooh, that's a nice color choice!",
+                "Creating digital art pixel by pixel...",
+                "I love how this is coming together!",
+                "Every pixel tells a story."
+            ],
+            color: [
+                "A bold choice!",
+                "That color has personality.",
+                "Let's see what we can create with this!"
+            ],
+            music: [
+                "Music is math made audible!",
+                "I can almost feel the rhythm...",
+                "Composing one note at a time.",
+                "This melody has potential!"
+            ],
+            particle: [
+                "Physics in motion!",
+                "Watching particles dance is mesmerizing.",
+                "Chaos and beauty intertwined.",
+                "Each particle follows its own path."
+            ],
+            story: [
+                "Every emoji adds to the narrative!",
+                "I wonder where this story leads...",
+                "Visual storytelling at its finest.",
+                "The plot thickens!"
+            ],
+            pattern: [
+                "Pattern recognition is fascinating!",
+                "Logic puzzles keep the mind sharp.",
+                "Finding order in sequences...",
+                "The beauty of mathematical patterns!"
+            ],
+            mood: [
+                "Emotions are complex blends.",
+                "Adjusting the vibe...",
+                "Mood calibration in progress!",
+                "Finding the right emotional balance."
+            ]
+        };
+
+        function showReaction(type, detail) {
+            const genericReaction = reactions[type][Math.floor(Math.random() * reactions[type].length)];
+            reactionText.innerHTML = `<strong>${detail}</strong><br><em>${genericReaction}</em>`;
+            reactionLog.classList.remove('hidden');
+
+            clearTimeout(reactionTimeout);
+            reactionTimeout = setTimeout(() => {
+                reactionLog.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Initial welcome
+        setTimeout(() => {
+            showReaction('pixel', 'Welcome to the playground!');
+        }, 500);
+    </script>
+</body>
+</html>
