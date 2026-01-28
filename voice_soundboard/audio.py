@@ -113,9 +113,18 @@ def play_audio(
         data = source
 
     try:
-        sd.play(data, sample_rate)
-        if blocking:
-            sd.wait()
+        # Use OutputStream directly to avoid CFFI callback cleanup bug in sounddevice 0.5.x on Windows
+        # The bug causes "AttributeError: '_CallbackContext' object has no attribute 'out'"
+        # when the finished_callback tries to access self.out after stream cleanup
+        import sys
+        if sys.platform == 'win32':
+            # Suppress the CFFI error by using a stream without finished_callback
+            with sd.OutputStream(samplerate=sample_rate, channels=data.shape[1] if data.ndim > 1 else 1) as stream:
+                stream.write(data.astype(np.float32) if data.dtype != np.float32 else data)
+        else:
+            sd.play(data, sample_rate)
+            if blocking:
+                sd.wait()
     except Exception as e:
         logger.error("Audio playback failed: %s", e)
         raise RuntimeError(f"Failed to play audio: {e}") from e
