@@ -157,6 +157,7 @@ class TestPlayAudio:
 
     def test_play_from_file_blocking(self, tmp_path):
         """Test playing audio from file in blocking mode."""
+        import sys
         with patch('voice_soundboard.audio.Config') as mock_config:
             config_instance = MagicMock()
             config_instance.output_dir = tmp_path
@@ -168,15 +169,22 @@ class TestPlayAudio:
             with patch('soundfile.read') as mock_read:
                 mock_read.return_value = (np.zeros(1000), 24000)
 
-                with patch('sounddevice.play') as mock_play:
-                    with patch('sounddevice.wait') as mock_wait:
-                        play_audio(audio_file, blocking=True)
+                with patch('sounddevice.play') as mock_play, \
+                     patch('sounddevice.wait') as mock_wait, \
+                     patch('sounddevice.OutputStream') as mock_stream:
+                    
+                    mock_stream_instance = mock_stream.return_value.__enter__.return_value
+                    play_audio(audio_file, blocking=True)
 
+                    if sys.platform == 'win32':
+                        mock_stream.assert_called_once()
+                    else:
                         mock_play.assert_called_once()
                         mock_wait.assert_called_once()
 
     def test_play_from_file_non_blocking(self, tmp_path):
         """Test playing audio from file in non-blocking mode."""
+        import sys
         with patch('voice_soundboard.audio.Config') as mock_config:
             config_instance = MagicMock()
             config_instance.output_dir = tmp_path
@@ -188,21 +196,37 @@ class TestPlayAudio:
             with patch('soundfile.read') as mock_read:
                 mock_read.return_value = (np.zeros(1000), 24000)
 
-                with patch('sounddevice.play') as mock_play:
-                    with patch('sounddevice.wait') as mock_wait:
-                        play_audio(audio_file, blocking=False)
+                with patch('sounddevice.play') as mock_play, \
+                     patch('sounddevice.wait') as mock_wait, \
+                     patch('sounddevice.OutputStream') as mock_stream:
+                    
+                    mock_stream_instance = mock_stream.return_value.__enter__.return_value
+                    play_audio(audio_file, blocking=False)
 
+                    if sys.platform == 'win32':
+                        mock_stream.assert_called_once()
+                    else:
                         mock_play.assert_called_once()
                         mock_wait.assert_not_called()
 
     def test_play_from_numpy_array(self):
         """Test playing audio from numpy array."""
+        import sys
         samples = np.zeros(1000, dtype=np.float32)
 
-        with patch('sounddevice.play') as mock_play:
-            with patch('sounddevice.wait') as mock_wait:
-                play_audio(samples, sample_rate=44100, blocking=True)
+        with patch('sounddevice.play') as mock_play, \
+             patch('sounddevice.wait') as mock_wait, \
+             patch('sounddevice.OutputStream') as mock_stream:
+            
+            mock_stream_instance = mock_stream.return_value.__enter__.return_value
+            play_audio(samples, sample_rate=44100, blocking=True)
 
+            if sys.platform == 'win32':
+                mock_stream.assert_called_once()
+                # On Windows, check samplerate in OutputStream constructor call
+                call_kwargs = mock_stream.call_args[1]
+                assert call_kwargs['samplerate'] == 44100
+            else:
                 mock_play.assert_called_once()
                 call_args = mock_play.call_args
                 assert call_args[0][1] == 44100  # sample rate
@@ -457,12 +481,21 @@ class TestAudioDefaultSampleRate:
 
     def test_default_sample_rate_for_array(self):
         """Test default sample rate is 24kHz for numpy arrays."""
+        import sys
         samples = np.zeros(1000, dtype=np.float32)
 
-        with patch('sounddevice.play') as mock_play:
-            with patch('sounddevice.wait'):
-                play_audio(samples)
+        with patch('sounddevice.play') as mock_play, \
+             patch('sounddevice.wait'), \
+             patch('sounddevice.OutputStream') as mock_stream:
+            
+            mock_stream_instance = mock_stream.return_value.__enter__.return_value
+            play_audio(samples)
 
+            if sys.platform == 'win32':
+                # Default sample rate should be 24000
+                call_kwargs = mock_stream.call_args[1]
+                assert call_kwargs['samplerate'] == 24000
+            else:
                 # Default sample rate should be 24000
                 call_args = mock_play.call_args
                 assert call_args[0][1] == 24000

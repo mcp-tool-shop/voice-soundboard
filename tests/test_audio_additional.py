@@ -113,9 +113,11 @@ class TestPlayAudioInput:
 
     def test_play_audio_with_file_path(self, tmp_path):
         """TEST-A01: play_audio with file path."""
+        import sys
         with patch('sounddevice.play') as mock_play, \
              patch('sounddevice.wait') as mock_wait, \
              patch('soundfile.read') as mock_read, \
+             patch('sounddevice.OutputStream') as mock_stream, \
              patch.object(Config, '__init__', lambda self: None):
 
             audio_file = tmp_path / "test.wav"
@@ -123,47 +125,69 @@ class TestPlayAudioInput:
 
             # Setup mocks
             mock_read.return_value = (np.zeros(24000), 24000)
+            mock_stream_instance = mock_stream.return_value.__enter__.return_value
 
             # Need to also mock _validate_audio_path
             with patch('voice_soundboard.audio._validate_audio_path', return_value=audio_file):
                 play_audio(audio_file, blocking=False)
 
-            mock_play.assert_called_once()
+            if sys.platform == 'win32':
+                mock_stream.assert_called_once()
+            else:
+                mock_play.assert_called_once()
 
     def test_play_audio_with_numpy_array(self):
         """TEST-A02: play_audio with numpy array input."""
+        import sys
         with patch('sounddevice.play') as mock_play, \
-             patch('sounddevice.wait') as mock_wait:
+             patch('sounddevice.wait') as mock_wait, \
+             patch('sounddevice.OutputStream') as mock_stream:
 
             samples = np.zeros(24000, dtype=np.float32)
+            mock_stream_instance = mock_stream.return_value.__enter__.return_value
 
             play_audio(samples, sample_rate=24000, blocking=False)
 
-            mock_play.assert_called_once()
+            if sys.platform == 'win32':
+                mock_stream.assert_called_once()
+            else:
+                mock_play.assert_called_once()
 
     def test_play_audio_blocking_waits(self):
         """Test play_audio with blocking=True waits for playback."""
+        import sys
         with patch('sounddevice.play') as mock_play, \
-             patch('sounddevice.wait') as mock_wait:
+             patch('sounddevice.wait') as mock_wait, \
+             patch('sounddevice.OutputStream') as mock_stream:
 
             samples = np.zeros(24000, dtype=np.float32)
+            mock_stream_instance = mock_stream.return_value.__enter__.return_value
 
             play_audio(samples, sample_rate=24000, blocking=True)
 
-            mock_play.assert_called_once()
-            mock_wait.assert_called_once()
+            if sys.platform == 'win32':
+                mock_stream.assert_called_once()
+            else:
+                mock_play.assert_called_once()
+                mock_wait.assert_called_once()
 
     def test_play_audio_non_blocking(self):
         """TEST-A12 partial: play_audio with blocking=False returns immediately."""
+        import sys
         with patch('sounddevice.play') as mock_play, \
-             patch('sounddevice.wait') as mock_wait:
+             patch('sounddevice.wait') as mock_wait, \
+             patch('sounddevice.OutputStream') as mock_stream:
 
             samples = np.zeros(24000, dtype=np.float32)
+            mock_stream_instance = mock_stream.return_value.__enter__.return_value
 
             play_audio(samples, sample_rate=24000, blocking=False)
 
-            mock_play.assert_called_once()
-            mock_wait.assert_not_called()
+            if sys.platform == 'win32':
+                mock_stream.assert_called_once()
+            else:
+                mock_play.assert_called_once()
+                mock_wait.assert_not_called()
 
     def test_play_audio_file_not_found(self, tmp_path):
         """TEST-A06: play_audio with nonexistent file raises error."""
@@ -179,15 +203,26 @@ class TestPlayAudioEmptyArray:
 
     def test_play_audio_empty_array(self):
         """TEST-A08: play_audio with empty numpy array doesn't crash."""
+        import sys
         with patch('sounddevice.play') as mock_play, \
-             patch('sounddevice.wait'):
+             patch('sounddevice.wait'), \
+             patch('sounddevice.OutputStream') as mock_stream:
 
             samples = np.array([], dtype=np.float32)
+            mock_stream_instance = mock_stream.return_value.__enter__.return_value
 
             # Should not raise
             play_audio(samples, sample_rate=24000, blocking=False)
 
-            mock_play.assert_called_once()
+            if sys.platform == 'win32':
+                mock_stream.assert_called_once()
+            else:
+                mock_play.assert_called_once()
+
+            if sys.platform == 'win32':
+                mock_stream.assert_called_once()
+            else:
+                mock_play.assert_called_once()
 
 
 class TestStopPlayback:
