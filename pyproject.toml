@@ -6,9 +6,20 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "AI Dev Lab"}
+    {name = "mcp-tool-shop", email = "64996768+mcp-tool-shop@users.noreply.github.com"}
 ]
-keywords = ["tts", "text-to-speech", "mcp", "ai", "voice", "soundboard"]
+keywords = [
+    "tts",
+    "text-to-speech",
+    "mcp",
+    "ai",
+    "voice",
+    "soundboard",
+    "voice-synthesis",
+    "natural-language",
+    "speech",
+    "audio",
+]
 
 dependencies = [
     "kokoro>=0.9.2",
@@ -57,6 +68,12 @@ all = [
 
 [project.scripts]
 voice-soundboard = "voice_soundboard.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/mcp-tool-shop/voice-soundboard"
+Repository = "https://github.com/mcp-tool-shop/voice-soundboard"
+Issues = "https://github.com/mcp-tool-shop/voice-soundboard/issues"
+Documentation = "https://github.com/mcp-tool-shop/voice-soundboard#readme"
 
 [build-system]
 requires = ["hatchling"]
