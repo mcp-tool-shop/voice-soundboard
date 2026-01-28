@@ -22,7 +22,6 @@ keywords = [
 ]
 
 dependencies = [
-    "kokoro>=0.9.2",
     "soundfile>=0.12.1",
     "sounddevice>=0.4.6",
     "numpy>=1.24.0",
@@ -44,26 +43,32 @@ websocket = [
 web = [
     "aiohttp>=3.9.0",
 ]
+# Kokoro TTS: High-quality neural voice synthesis (primary engine, Python 3.10-3.12 compatible)
+kokoro = [
+    "kokoro>=0.9.2;python_version<'3.14'",
+]
+# Piper TTS: Lightweight fallback for Python 3.14+ compatibility
 fallback = [
     "piper-tts>=1.2.0",
 ]
-# Chatterbox: Paralinguistic tags, emotion exaggeration, voice cloning
+# Chatterbox: Paralinguistic tags, emotion exaggeration, voice cloning (requires Python 3.10-3.12)
 chatterbox = [
-    "chatterbox-tts>=0.1.0",
-    "torchaudio>=2.0.0",
+    "chatterbox-tts>=0.1.0;python_version<'3.14'",
+    "torchaudio>=2.0.0;python_version<'3.14'",
 ]
-# F5-TTS: Diffusion Transformer for high-quality zero-shot voice cloning
+# F5-TTS: Diffusion Transformer for high-quality zero-shot voice cloning (requires Python 3.10-3.12)
 f5tts = [
-    "f5-tts>=1.0.0",
-    "torchaudio>=2.0.0",
+    "f5-tts>=1.0.0;python_version<'3.14'",
+    "torchaudio>=2.0.0;python_version<'3.14'",
 ]
 all = [
     "mcp>=1.0.0",
     "websockets>=12.0",
     "aiohttp>=3.9.0",
-    "chatterbox-tts>=0.1.0",
+    "kokoro>=0.9.2;python_version<'3.14'",
+    "chatterbox-tts>=0.1.0;python_version<'3.14'",
     "torchaudio>=2.0.0",
-    "f5-tts>=1.0.0",
+    "f5-tts>=1.0.0;python_version<'3.14'",
 ]
 
 [project.scripts]
