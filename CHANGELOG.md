@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### The "Platform Hardening" Release
 
-Phases 1-4: Identity, API discipline, core lock, and surface reduction.
+Phases 1-5: Identity, API discipline, core lock, surface reduction, proof of power.
 
 ### Added
 - `docs/ARCHITECTURE.md` - Frozen lifecycle, interfaces, invariants
@@ -19,15 +19,21 @@ Phases 1-4: Identity, API discipline, core lock, and surface reduction.
 - `docs/SECURITY_SUMMARY.md` - One-page threat model and ethical use statement
 - `docs/GLOSSARY.md` - Canonical terminology with deprecated terms table
 - `docs/RELEASE.md` - Change classification and PR checklist
+- `docs/SYSTEM_OVERVIEW.md` - One-page architecture narrative with diagram
+- `docs/V1_CONTRACT.md` - What v1.0 means: locked, changeable, excluded
 - `voice_soundboard/exceptions.py` - Domain exception hierarchy
 - `API_VERSION = 1` constant in `__init__.py`
 - `SpeechTiming` dataclass for per-stage timing instrumentation
 - `--style` CLI flag (aligns CLI with `style=` API parameter)
 - 46 smoke tests (imports, API contracts, CLI parser)
 - `examples/hello_world.py` - Golden path starting point
+- `demos/` - Three canonical demos (narrator, character, assistant)
+- `demos/web/` - Minimal browser-based WebSocket demo
+- `benchmarks/bench_basic.py` - Startup, generation, throughput measurement
 
 ### Changed
 - README rewritten: Quick Start at top, What This Is/Is NOT/Who This Is For
+- README adds Demos section and Documentation links
 - `__init__.py` reduced from 277-line export to 24 stable symbols
 - `Config` resolves paths from env vars instead of hardcoded paths
 - `engine.py` uses structured logging instead of `print()`

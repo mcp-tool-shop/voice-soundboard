@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Soundboard Demo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #1a1a2e; color: #e0e0e0;
+    display: flex; justify-content: center; padding: 2rem;
+  }
+  .container { max-width: 480px; width: 100%; }
+  h1 { font-size: 1.4rem; margin-bottom: 0.5rem; color: #fff; }
+  .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 1.5rem; }
+
+  label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 0.3rem; }
+  textarea {
+    width: 100%; height: 80px; padding: 0.7rem;
+    background: #16213e; border: 1px solid #333; border-radius: 6px;
+    color: #e0e0e0; font-size: 0.95rem; resize: vertical;
+    margin-bottom: 1rem;
+  }
+  textarea:focus { outline: none; border-color: #7c3aed; }
+
+  .row { display: flex; gap: 0.8rem; margin-bottom: 1rem; }
+  .row > div { flex: 1; }
+
+  select, button {
+    width: 100%; padding: 0.6rem;
+    background: #16213e; border: 1px solid #333; border-radius: 6px;
+    color: #e0e0e0; font-size: 0.9rem;
+  }
+  select:focus { outline: none; border-color: #7c3aed; }
+
+  .btn-speak {
+    background: #7c3aed; border: none; color: white;
+    font-weight: 600; cursor: pointer; padding: 0.8rem;
+    font-size: 1rem; border-radius: 6px; margin-bottom: 0.8rem;
+  }
+  .btn-speak:hover { background: #6d28d9; }
+  .btn-speak:disabled { background: #444; cursor: not-allowed; }
+
+  .btn-stop {
+    background: transparent; border: 1px solid #555; color: #aaa;
+    cursor: pointer; padding: 0.6rem; font-size: 0.85rem;
+    border-radius: 6px; margin-bottom: 1rem;
+  }
+  .btn-stop:hover { border-color: #e74c3c; color: #e74c3c; }
+
+  #status {
+    font-size: 0.8rem; color: #666; text-align: center;
+    padding: 0.5rem;
+  }
+  #status.connected { color: #22c55e; }
+  #status.error { color: #e74c3c; }
+  #status.speaking { color: #7c3aed; }
+
+  audio { width: 100%; margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Voice Soundboard</h1>
+  <p class="subtitle">Text-to-speech demo. Requires WebSocket server running.</p>
+
+  <label for="text">Text</label>
+  <textarea id="text" placeholder="Type something to speak...">Hello! This is Voice Soundboard running locally on your machine.</textarea>
+
+  <div class="row">
+    <div>
+      <label for="preset">Preset</label>
+      <select id="preset">
+        <option value="">Default</option>
+        <option value="assistant">Assistant</option>
+        <option value="narrator">Narrator</option>
+        <option value="announcer">Announcer</option>
+        <option value="storyteller">Storyteller</option>
+        <option value="whisper">Whisper</option>
+      </select>
+    </div>
+    <div>
+      <label for="emotion">Emotion</label>
+      <select id="emotion">
+        <option value="">Default</option>
+        <option value="happy">Happy</option>
+        <option value="calm">Calm</option>
+        <option value="excited">Excited</option>
+        <option value="sad">Sad</option>
+        <option value="angry">Angry</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="btn-speak" id="speakBtn" onclick="speak()">Speak</button>
+  <button class="btn-stop" onclick="stopAudio()">Stop</button>
+
+  <div id="status">Connecting...</div>
+  <audio id="player" controls style="display:none"></audio>
+</div>
+
+<script>
+const WS_URL = 'ws://localhost:8765';
+let ws = null;
+
+function connect() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => {
+    document.getElementById('status').textContent = 'Connected';
+    document.getElementById('status').className = 'connected';
+    document.getElementById('speakBtn').disabled = false;
+  };
+  ws.onclose = () => {
+    document.getElementById('status').textContent = 'Disconnected. Retrying...';
+    document.getElementById('status').className = 'error';
+    document.getElementById('speakBtn').disabled = true;
+    setTimeout(connect, 3000);
+  };
+  ws.onerror = () => {
+    document.getElementById('status').textContent = 'Connection failed. Is the server running?';
+    document.getElementById('status').className = 'error';
+  };
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      if (msg.success && msg.data && msg.data.audio_path) {
+        document.getElementById('status').textContent = 'Done (' + (msg.data.duration_seconds || 0).toFixed(1) + 's)';
+        document.getElementById('status').className = 'connected';
+      } else if (msg.error) {
+        document.getElementById('status').textContent = 'Error: ' + msg.error;
+        document.getElementById('status').className = 'error';
+      }
+      document.getElementById('speakBtn').disabled = false;
+    } catch (e) {}
+  };
+}
+
+function speak() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+  const text = document.getElementById('text').value.trim();
+  if (!text) return;
+
+  const msg = { action: 'speak', text: text, play: true };
+
+  const preset = document.getElementById('preset').value;
+  if (preset) msg.preset = preset;
+
+  const emotion = document.getElementById('emotion').value;
+  if (emotion) msg.emotion = emotion;
+
+  ws.send(JSON.stringify(msg));
+  document.getElementById('status').textContent = 'Speaking...';
+  document.getElementById('status').className = 'speaking';
+  document.getElementById('speakBtn').disabled = true;
+}
+
+function stopAudio() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ action: 'stop' }));
+    document.getElementById('status').textContent = 'Stopped';
+    document.getElementById('status').className = '';
+    document.getElementById('speakBtn').disabled = false;
+  }
+}
+
+document.getElementById('text').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); speak(); }
+});
+
+connect();
+</script>
+</body>
+</html>

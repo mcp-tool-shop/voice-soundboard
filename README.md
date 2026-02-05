@@ -175,6 +175,20 @@ pip install voice-soundboard[all]         # Everything
 
 ---
 
+## Demos
+
+Three canonical demos that show what this does. Each fits on one screen.
+
+```bash
+python demos/narrator.py      # Long-form documentary narration
+python demos/character.py     # Same character, three emotions
+python demos/assistant.py     # Streaming low-latency response
+```
+
+See [`demos/`](demos/) for details and a [web demo](demos/web/) for browser-based evaluation.
+
+---
+
 ## Advanced Topics
 
 These features are stable but beyond the scope of getting started:
@@ -185,8 +199,14 @@ These features are stable but beyond the scope of getting started:
 - [WebSocket server](examples/09_websocket_client.py) -- real-time bidirectional API
 - [Mobile web UI](examples/README.md) -- access from phone/tablet
 - [Vocology module](docs/research/vocology/) -- voice humanization, formant analysis, rhythm metrics
-- [Architecture & invariants](docs/ARCHITECTURE.md) -- core lifecycle, frozen interfaces
+
+## Documentation
+
+- [System overview](docs/SYSTEM_OVERVIEW.md) -- understand the architecture in 10 minutes
+- [Architecture & invariants](docs/ARCHITECTURE.md) -- frozen interfaces and lifecycle
 - [API stability guarantees](docs/API_STABILITY.md) -- what's stable vs experimental
+- [v1.0 contract](docs/V1_CONTRACT.md) -- what's locked, what may change, what's excluded
+- [Benchmarks](benchmarks/) -- measure performance on your hardware
 
 ---
 
