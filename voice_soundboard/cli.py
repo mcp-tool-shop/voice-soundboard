@@ -6,6 +6,7 @@ Usage:
     voice-soundboard speak "I'm excited!" --emotion excited
     voice-soundboard speak "Good day!" --voice bm_george
     voice-soundboard speak "Breaking news!" --preset announcer
+    voice-soundboard speak "Welcome!" --style "warmly and cheerfully"
 """
 
 from __future__ import annotations
@@ -28,6 +29,8 @@ def cmd_speak(args: argparse.Namespace) -> None:
         kwargs["preset"] = args.preset
     if args.emotion:
         kwargs["emotion"] = args.emotion
+    if args.style:
+        kwargs["style"] = args.style
     if args.speed is not None:
         kwargs["speed"] = args.speed
     if args.output:
@@ -65,7 +68,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     speak_parser.add_argument(
         "--emotion",
-        help="Emotion or style hint (e.g. excited, warmly).",
+        help="Named emotion (e.g. happy, calm, excited).",
+    )
+    speak_parser.add_argument(
+        "--style",
+        help="Natural language style hint (e.g. 'warmly and cheerfully').",
     )
     speak_parser.add_argument(
         "--speed",

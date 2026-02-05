@@ -1,8 +1,11 @@
 """
 LLM Integration Layer for Voice Soundboard.
 
-This module provides seamless integration between Large Language Models and
-text-to-speech, enabling natural conversational AI experiences.
+.. warning:: **Experimental.** This module may change or be removed between
+   minor releases. See docs/API_STABILITY.md and docs/FEATURE_FLAGS.md.
+
+Provides integration between Large Language Models and text-to-speech,
+enabling natural conversational AI experiences.
 
 Features:
 - Streaming LLM integration (speak as LLM generates)

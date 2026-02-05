@@ -192,7 +192,7 @@ These features are stable but beyond the scope of getting started:
 
 ## Security
 
-Voice Soundboard is security-hardened. See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) for details.
+Voice Soundboard is security-hardened. See [docs/SECURITY_SUMMARY.md](docs/SECURITY_SUMMARY.md) for the threat model, ethical use statement, and cloning safeguards. See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) for the full vulnerability report.
 
 - Path traversal protection on all file operations
 - XXE protection via defusedxml for SSML parsing

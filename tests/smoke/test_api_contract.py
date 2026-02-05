@@ -270,11 +270,13 @@ class TestCLIContract:
             "--voice", "af_bella",
             "--preset", "narrator",
             "--emotion", "calm",
+            "--style", "warmly",
             "--speed", "0.9",
             "-o", "test",
         ])
         assert args.voice == "af_bella"
         assert args.preset == "narrator"
         assert args.emotion == "calm"
+        assert args.style == "warmly"
         assert args.speed == 0.9
         assert args.output == "test"

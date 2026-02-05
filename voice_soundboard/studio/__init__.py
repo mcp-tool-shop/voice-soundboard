@@ -1,5 +1,8 @@
 """
-Voice Studio - Interactive Preset Creation and Tuning
+Voice Studio - Interactive Preset Creation and Tuning.
+
+.. warning:: **Experimental.** This module may change or be removed between
+   minor releases. See docs/API_STABILITY.md and docs/FEATURE_FLAGS.md.
 
 Provides tools for creating and tuning voice presets with:
 - Real-time audio preview

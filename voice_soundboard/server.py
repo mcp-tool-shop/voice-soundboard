@@ -99,14 +99,7 @@ if CHATTERBOX_AVAILABLE:
 # Voice Preset Catalog
 from voice_soundboard.presets import get_catalog, PresetCatalog
 
-# Screenshot tools
-from voice_soundboard.mcp_screenshot import (
-    take_screenshot,
-    open_snipping_tool,
-    start_screen_recording,
-    stop_screen_recording,
-    list_captures,
-)
+# Screenshot tools removed in Phase 4 (not TTS-related)
 
 
 # Global engine instances (lazy loaded)
@@ -1768,85 +1761,7 @@ async def list_tools() -> list[Tool]:
             description="Get current studio session status including active parameters and can_undo/can_redo state.",
             inputSchema={"type": "object", "properties": {}}
         ),
-        # Screenshot and screen recording tools
-        Tool(
-            name="screenshot",
-            description=(
-                "Take a screenshot of the full screen or a specific window. "
-                "Returns path to the saved image file."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "region": {
-                        "type": "string",
-                        "enum": ["full", "window"],
-                        "description": "Capture region: 'full' for full screen, 'window' for specific window"
-                    },
-                    "window_title": {
-                        "type": "string",
-                        "description": "Window title to capture (required when region='window')"
-                    },
-                    "output_path": {
-                        "type": "string",
-                        "description": "Optional path to save screenshot (auto-generated if not provided)"
-                    }
-                }
-            }
-        ),
-        Tool(
-            name="snipping_tool",
-            description=(
-                "Open Windows Snipping Tool for manual screen capture. "
-                "User can then select a region to capture."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "mode": {
-                        "type": "string",
-                        "enum": ["rectangular", "freeform", "window", "fullscreen"],
-                        "description": "Snipping mode (default: rectangular)"
-                    }
-                }
-            }
-        ),
-        Tool(
-            name="start_recording",
-            description=(
-                "Start screen recording using FFmpeg. "
-                "Call stop_recording to stop. Requires FFmpeg installed."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "output_path": {
-                        "type": "string",
-                        "description": "Path to save recording (auto-generated if not provided)"
-                    },
-                    "fps": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 60,
-                        "description": "Frames per second (default: 30)"
-                    },
-                    "duration": {
-                        "type": "integer",
-                        "description": "Max duration in seconds (optional, stops automatically)"
-                    }
-                }
-            }
-        ),
-        Tool(
-            name="stop_recording",
-            description="Stop the current screen recording.",
-            inputSchema={"type": "object", "properties": {}}
-        ),
-        Tool(
-            name="list_captures",
-            description="List all captured screenshots and recordings with paths and timestamps.",
-            inputSchema={"type": "object", "properties": {}}
-        ),
+        # Screenshot tools removed in Phase 4 (not TTS-related)
     ]
 
 
@@ -1996,17 +1911,6 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         return await handle_studio_redo(arguments)
     elif name == "studio_status":
         return await handle_studio_status(arguments)
-    # Screenshot tools
-    elif name == "screenshot":
-        return await handle_screenshot(arguments)
-    elif name == "snipping_tool":
-        return await handle_snipping_tool(arguments)
-    elif name == "start_recording":
-        return await handle_start_recording(arguments)
-    elif name == "stop_recording":
-        return await handle_stop_recording(arguments)
-    elif name == "list_captures":
-        return await handle_list_captures(arguments)
     else:
         return error_response(
             ErrorCode.UNKNOWN_TOOL,
@@ -4691,112 +4595,6 @@ async def handle_studio_status(args: dict[str, Any]) -> list[TextContent]:
 
     except Exception as e:
         return [TextContent(type="text", text=f"Error getting status: {e}")]
-
-
-# Screenshot handlers
-
-async def handle_screenshot(args: dict[str, Any]) -> list[TextContent]:
-    """Take a screenshot."""
-    region = args.get("region", "full")
-    window_title = args.get("window_title")
-    output_path = args.get("output_path")
-
-    try:
-        result = take_screenshot(
-            region=region,
-            output_path=output_path,
-            window_title=window_title
-        )
-
-        if result.get("success"):
-            return [TextContent(
-                type="text",
-                text=f"Screenshot captured!\n  Path: {result['path']}"
-            )]
-        else:
-            return [TextContent(type="text", text=f"Screenshot failed: {result.get('error', 'Unknown error')}")]
-
-    except Exception as e:
-        return [TextContent(type="text", text=f"Error taking screenshot: {e}")]
-
-
-async def handle_snipping_tool(args: dict[str, Any]) -> list[TextContent]:
-    """Open Windows Snipping Tool."""
-    mode = args.get("mode", "rectangular")
-
-    try:
-        result = open_snipping_tool(mode=mode)
-
-        if result.get("success"):
-            return [TextContent(type="text", text=result["message"])]
-        else:
-            return [TextContent(type="text", text=f"Failed to open Snipping Tool: {result.get('error')}")]
-
-    except Exception as e:
-        return [TextContent(type="text", text=f"Error opening Snipping Tool: {e}")]
-
-
-async def handle_start_recording(args: dict[str, Any]) -> list[TextContent]:
-    """Start screen recording."""
-    output_path = args.get("output_path")
-    fps = args.get("fps", 30)
-    duration = args.get("duration")
-
-    try:
-        result = start_screen_recording(
-            output_path=output_path,
-            fps=fps,
-            duration=duration
-        )
-
-        if result.get("success"):
-            return [TextContent(
-                type="text",
-                text=f"Recording started!\n  PID: {result['pid']}\n  Output: {result['output_path']}\n\nCall stop_recording to stop."
-            )]
-        else:
-            return [TextContent(type="text", text=f"Recording failed: {result.get('error')}")]
-
-    except Exception as e:
-        return [TextContent(type="text", text=f"Error starting recording: {e}")]
-
-
-async def handle_stop_recording(args: dict[str, Any]) -> list[TextContent]:
-    """Stop screen recording."""
-    try:
-        result = stop_screen_recording()
-
-        if result.get("success"):
-            return [TextContent(type="text", text=result["message"])]
-        else:
-            return [TextContent(type="text", text=f"Stop failed: {result.get('error')}")]
-
-    except Exception as e:
-        return [TextContent(type="text", text=f"Error stopping recording: {e}")]
-
-
-async def handle_list_captures(args: dict[str, Any]) -> list[TextContent]:
-    """List captured screenshots and recordings."""
-    try:
-        result = list_captures()
-
-        lines = [
-            f"Captures Directory: {result['captures_dir']}",
-            f"Total: {result['count']} files\n"
-        ]
-
-        for cap in result["captures"]:
-            size_kb = cap["size"] / 1024
-            lines.append(f"  [{cap['type']}] {cap['name']} ({size_kb:.1f} KB)")
-            lines.append(f"           {cap['created']}")
-
-        if not result["captures"]:
-            lines.append("  No captures found.")
-
-        return [TextContent(type="text", text="\n".join(lines))]
-
-    except Exception as e:
-        return [TextContent(type="text", text=f"Error listing captures: {e}")]
 
 
 async def main():

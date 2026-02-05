@@ -26,12 +26,15 @@ Fixes #(issue number)
 ## Checklist
 - [ ] Code follows project style guidelines
 - [ ] Self-reviewed my own code
-- [ ] Added comments for complex logic
-- [ ] Updated documentation if needed
 - [ ] No new security vulnerabilities introduced
 
-## Screenshots (if applicable)
-Add screenshots for UI changes or visual output.
+## API & Release Checklist
+- [ ] **Change type:** patch / minor / breaking (see [docs/RELEASE.md](docs/RELEASE.md))
+- [ ] **API impact:** Does this change any symbol in `__init__.py`? If yes, is it additive-only?
+- [ ] **Feature flags:** Does this introduce behavior that should be opt-in?
+- [ ] **Smoke tests pass:** `pytest tests/smoke/ -v`
+- [ ] **CHANGELOG updated:** Entry added under `[Unreleased]`
+- [ ] **Glossary:** New terminology added to `docs/GLOSSARY.md` if applicable
 
 ## Additional Notes
 Any additional information for reviewers.

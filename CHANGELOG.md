@@ -5,6 +5,45 @@ All notable changes to Voice Soundboard will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### The "Platform Hardening" Release
+
+Phases 1-4: Identity, API discipline, core lock, and surface reduction.
+
+### Added
+- `docs/ARCHITECTURE.md` - Frozen lifecycle, interfaces, invariants
+- `docs/API_STABILITY.md` - Versioned API policy with deprecation rules
+- `docs/MODULE_AUDIT.md` - Every module justified in one sentence
+- `docs/FEATURE_FLAGS.md` - Opt-in complexity tiers (Core / Optional / Research)
+- `docs/SECURITY_SUMMARY.md` - One-page threat model and ethical use statement
+- `docs/GLOSSARY.md` - Canonical terminology with deprecated terms table
+- `docs/RELEASE.md` - Change classification and PR checklist
+- `voice_soundboard/exceptions.py` - Domain exception hierarchy
+- `API_VERSION = 1` constant in `__init__.py`
+- `SpeechTiming` dataclass for per-stage timing instrumentation
+- `--style` CLI flag (aligns CLI with `style=` API parameter)
+- 46 smoke tests (imports, API contracts, CLI parser)
+- `examples/hello_world.py` - Golden path starting point
+
+### Changed
+- README rewritten: Quick Start at top, What This Is/Is NOT/Who This Is For
+- `__init__.py` reduced from 277-line export to 24 stable symbols
+- `Config` resolves paths from env vars instead of hardcoded paths
+- `engine.py` uses structured logging instead of `print()`
+- `engine.py` raises `ModelNotFoundError` / `VoiceNotFoundError` instead of generic exceptions
+- `--emotion` CLI flag now correctly maps to `emotion=` (was `style=`)
+- Research docs moved to `docs/research/`
+
+### Removed
+- `mcp_screenshot.py` - Screenshot utility unrelated to TTS
+- Screenshot tools removed from MCP server (5 tools)
+
+### Fixed
+- Hardcoded `F:/AI/voice-soundboard/` paths replaced with env var resolution
+
+---
+
 ## [1.2.0] - 2026-01-23
 
 ### The "Voice Science" Release

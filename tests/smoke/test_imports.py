@@ -156,11 +156,13 @@ class TestCLI:
             "--voice", "bm_george",
             "--preset", "narrator",
             "--emotion", "calm",
+            "--style", "warmly and cheerfully",
             "--speed", "0.9",
             "-o", "test_output",
         ])
         assert args.voice == "bm_george"
         assert args.preset == "narrator"
         assert args.emotion == "calm"
+        assert args.style == "warmly and cheerfully"
         assert args.speed == 0.9
         assert args.output == "test_output"

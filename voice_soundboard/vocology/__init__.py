@@ -1,5 +1,8 @@
 """
-Voice Soundboard Vocology Module
+Voice Soundboard Vocology Module.
+
+.. warning:: **Experimental.** This module may change or be removed between
+   minor releases. See docs/API_STABILITY.md and docs/FEATURE_FLAGS.md.
 
 Scientific voice analysis and manipulation based on vocology research.
 

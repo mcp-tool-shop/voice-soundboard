@@ -1,6 +1,9 @@
 """
 Real-Time Voice Conversion Module.
 
+.. warning:: **Experimental.** This module may change or be removed between
+   minor releases. See docs/API_STABILITY.md and docs/FEATURE_FLAGS.md.
+
 Provides low-latency voice conversion for live audio streams,
 enabling real-time voice changing and voice cloning applications.
 

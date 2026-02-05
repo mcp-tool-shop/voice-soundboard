@@ -1,16 +1,13 @@
 """
 Neural Audio Codecs Module.
 
+.. warning:: **Experimental.** This module may change or be removed between
+   minor releases. See docs/API_STABILITY.md and docs/FEATURE_FLAGS.md.
+
 Provides audio-to-token conversion for LLM integration:
 - Mimi: 12.5 Hz codec from Kyutai (CSM/Moshi)
 - DualCodec: Semantic-acoustic separation
 - Mock: Testing without heavy dependencies
-
-These codecs enable:
-- Speech tokenization for LLM input
-- Audio generation from LLM output tokens
-- Streaming encode/decode
-- Semantic-acoustic disentanglement
 """
 
 from voice_soundboard.codecs.base import (

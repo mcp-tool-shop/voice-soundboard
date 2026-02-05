@@ -19,6 +19,29 @@ One word per concept. If two words mean the same thing, only one appears here.
 | **SSML** | Speech Synthesis Markup Language. An XML format for fine-grained control over pauses, emphasis, and pronunciation. |
 | **Effect** | A short procedurally-generated sound (e.g. `chime`, `success`, `error`). Not speech. |
 
+## Module Naming Conventions
+
+Some modules share similar names. This is intentional:
+
+| Module | Scope | When to Use |
+|--------|-------|-------------|
+| `emotions.py` | Core. Maps emotion names to synthesis parameters. | Basic: `get_emotion_params("happy")` |
+| `emotion/` | Optional. Advanced VAD model, blending, curves. | Advanced: `blend_emotions([("happy", 0.7), ("surprised", 0.3)])` |
+
+Rule: if you need a named emotion for `speak(emotion="happy")`, that's `emotions.py`.
+If you need to blend, parse inline tags, or create emotion curves, that's `emotion/`.
+
+## API / CLI Parameter Mapping
+
+| API Parameter | CLI Flag | Notes |
+|---------------|----------|-------|
+| `voice=` | `--voice` | |
+| `preset=` | `--preset` | |
+| `emotion=` | `--emotion` | |
+| `style=` | `--style` | Natural language hint |
+| `speed=` | `--speed` | |
+| `save_as=` | `-o` / `--output` | Different name (CLI convention) |
+
 ## Deprecated / Avoided Terms
 
 These terms are **not used** in public APIs or documentation:
@@ -30,3 +53,5 @@ These terms are **not used** in public APIs or documentation:
 | "persona" | **preset** | Preset is the established term in this project. |
 | "timbre" | **voice** | Timbre is a technical acoustic property. Users pick a voice. |
 | "utterance" | **text** or **speech** | Unnecessary jargon. |
+| "speaker" (in API) | **voice** | "Speaker" is acceptable in dialogue contexts only (e.g. `[S1:narrator]`). |
+| "profile" | **voice** (or **preset**) | VoiceProfile in cloning is a legacy name; represents a cloned voice instance. |
