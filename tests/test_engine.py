@@ -31,7 +31,7 @@ class TestSpeechResult:
         field_names = {f.name for f in fields(SpeechResult)}
         expected = {
             "audio_path", "duration_seconds", "generation_time",
-            "voice_used", "sample_rate", "realtime_factor"
+            "voice_used", "sample_rate", "realtime_factor", "timing"
         }
         assert field_names == expected
 
@@ -218,10 +218,11 @@ class TestVoiceEngineSpeak:
 
     def test_speak_invalid_voice_raises(self, mock_engine, tmp_path):
         """Test speak raises for invalid voice."""
+        from voice_soundboard.exceptions import VoiceNotFoundError
         mock_engine.config.output_dir = tmp_path
         mock_engine._kokoro.get_voices.return_value = ["af_bella", "am_michael"]
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(VoiceNotFoundError) as exc_info:
             mock_engine.speak("Test", voice="invalid_voice")
 
         assert "Unknown voice" in str(exc_info.value)

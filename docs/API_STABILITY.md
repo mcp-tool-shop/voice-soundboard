@@ -3,6 +3,58 @@
 Every public symbol in Voice Soundboard has a stability level. This tells you
 whether it's safe to depend on across releases.
 
+The current API version is available as `voice_soundboard.API_VERSION`.
+
+---
+
+## Versioning Rules
+
+Voice Soundboard follows [Semantic Versioning](https://semver.org/):
+
+| Version | Meaning |
+|---------|---------|
+| **0.x.y** | Experimental. Anything can change. |
+| **1.x.y** | Stable public API. See rules below. |
+
+### What counts as a breaking change
+
+Any of these on a **stable** symbol requires a major version bump:
+
+- Removing a public function, class, or method
+- Changing a return type
+- Adding a required parameter (without a default)
+- Renaming a parameter
+- Changing the meaning of an existing parameter
+- Removing a field from `SpeechResult` or `Config`
+
+### What does NOT count as a breaking change
+
+- Adding a new optional parameter (with a default)
+- Adding a new function or class to `__all__`
+- Fixing a bug (even if someone depended on the broken behavior)
+- Changing internal/experimental APIs
+- Adding new voices, presets, or emotions
+- Performance improvements
+
+### Deprecation Policy
+
+Before removing a stable symbol:
+
+1. Add a `DeprecationWarning` for at least one minor release
+2. Document the deprecation in CHANGELOG.md
+3. Provide a migration path in the warning message
+4. Remove in the next major version
+
+```python
+import warnings
+warnings.warn(
+    "quick_speak() is deprecated, use VoiceEngine().speak() instead. "
+    "Will be removed in v2.0.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+```
+
 ---
 
 ## Stability Levels
@@ -47,6 +99,7 @@ in production code unless you pin an exact version.
 | `get_emotion_params()` | 1.0.0 | Emotion parameter lookup |
 | `list_emotions()` | 1.0.0 | Available emotions |
 | `get_effect()` / `play_effect()` / `list_effects()` | 1.0.0 | Sound effects |
+| `API_VERSION` | 1.1.0 | API version constant |
 
 ### Advanced -- import from subpackages
 
@@ -77,5 +130,7 @@ If it's in `from voice_soundboard import X` -- it's **stable**.
 If it's in `from voice_soundboard.engines import X` -- it's **advanced**.
 
 If it's in `from voice_soundboard.codecs import X` -- it's **experimental**.
+
+Programmatically: `voice_soundboard.API_VERSION` returns the API version.
 
 When in doubt, check this document.

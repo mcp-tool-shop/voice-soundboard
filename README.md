@@ -185,6 +185,8 @@ These features are stable but beyond the scope of getting started:
 - [WebSocket server](examples/09_websocket_client.py) -- real-time bidirectional API
 - [Mobile web UI](examples/README.md) -- access from phone/tablet
 - [Vocology module](docs/research/vocology/) -- voice humanization, formant analysis, rhythm metrics
+- [Architecture & invariants](docs/ARCHITECTURE.md) -- core lifecycle, frozen interfaces
+- [API stability guarantees](docs/API_STABILITY.md) -- what's stable vs experimental
 
 ---
 

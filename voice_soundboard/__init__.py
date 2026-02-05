@@ -33,14 +33,37 @@ Example:
 
 __version__ = "1.1.0"
 
+#: API version. Bumped on breaking changes to stable symbols.
+#: See docs/API_STABILITY.md for the full policy.
+API_VERSION = 1
+
 # ---- Public API (stable) ----
 from voice_soundboard.engine import VoiceEngine, SpeechResult, quick_speak
 from voice_soundboard.config import Config, KOKORO_VOICES, VOICE_PRESETS
 from voice_soundboard.audio import play_audio, stop_playback
 from voice_soundboard.effects import get_effect, play_effect, list_effects
 from voice_soundboard.emotions import get_emotion_params, list_emotions, EMOTIONS
+from voice_soundboard.exceptions import (
+    VoiceSoundboardError,
+    ConfigurationError,
+    ModelNotFoundError,
+    VoiceNotFoundError,
+    EngineError,
+    AudioError,
+    StreamingError,
+)
 
 __all__ = [
+    # Version
+    "API_VERSION",
+    # Exceptions
+    "VoiceSoundboardError",
+    "ConfigurationError",
+    "ModelNotFoundError",
+    "VoiceNotFoundError",
+    "EngineError",
+    "AudioError",
+    "StreamingError",
     # Core
     "VoiceEngine",
     "SpeechResult",

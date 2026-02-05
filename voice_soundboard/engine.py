@@ -2,16 +2,22 @@
 Voice Engine - Core TTS synthesis using Kokoro ONNX.
 
 Provides high-quality text-to-speech with GPU acceleration.
+
+Enable debug logging to see per-stage timing:
+
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
 """
 
 from __future__ import annotations
 
+import logging
 import os
 import time
 import hashlib
 from pathlib import Path
 from typing import Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 import soundfile as sf
@@ -22,6 +28,26 @@ from voice_soundboard.security import (
     validate_speed, secure_hash, safe_error_message
 )
 from voice_soundboard.normalizer import normalize_text as normalize_text_func
+from voice_soundboard.exceptions import (
+    ModelNotFoundError, VoiceNotFoundError, EngineError,
+)
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class SpeechTiming:
+    """Per-stage timing breakdown for a speak() call.
+
+    Available on SpeechResult.timing when the engine has debug logging enabled.
+    All values in seconds.
+    """
+    total: float = 0.0
+    normalize: float = 0.0
+    interpret: float = 0.0
+    synthesize: float = 0.0
+    save: float = 0.0
+    model_load: float = 0.0
 
 
 @dataclass
@@ -33,6 +59,7 @@ class SpeechResult:
     voice_used: str
     sample_rate: int
     realtime_factor: float  # How many times faster than realtime
+    timing: Optional[SpeechTiming] = field(default=None, repr=False)
 
 
 class VoiceEngine:
@@ -44,6 +71,11 @@ class VoiceEngine:
     - GPU acceleration via ONNX Runtime
     - Voice presets (assistant, narrator, etc.)
     - Speed control
+
+    Enable debug logging to see per-stage timing:
+
+        import logging
+        logging.basicConfig(level=logging.DEBUG)
 
     Example:
         engine = VoiceEngine()
@@ -67,27 +99,25 @@ class VoiceEngine:
         self._model_path = self._model_dir / "kokoro-v1.0.onnx"
         self._voices_path = self._model_dir / "voices-v1.0.bin"
 
-    def _ensure_model_loaded(self):
-        """Lazy-load the Kokoro model on first use."""
+    def _ensure_model_loaded(self) -> float:
+        """Lazy-load the Kokoro model on first use.
+
+        Returns:
+            Load time in seconds (0.0 if already loaded).
+        """
         if self._model_loaded:
-            return
+            return 0.0
 
         from kokoro_onnx import Kokoro
 
         # Check model files exist
         if not self._model_path.exists():
-            raise FileNotFoundError(
-                f"Model not found: {self._model_path}\n"
-                "Download from: https://github.com/thewh1teagle/kokoro-onnx/releases"
-            )
+            raise ModelNotFoundError(str(self._model_path), "Kokoro ONNX")
         if not self._voices_path.exists():
-            raise FileNotFoundError(
-                f"Voices not found: {self._voices_path}\n"
-                "Download from: https://github.com/thewh1teagle/kokoro-onnx/releases"
-            )
+            raise ModelNotFoundError(str(self._voices_path), "Kokoro voices")
 
-        print(f"Loading Kokoro model (device: {self.config.device})...")
-        start = time.time()
+        logger.info("Loading Kokoro model (device: %s)...", self.config.device)
+        start = time.perf_counter()
 
         self._kokoro = Kokoro(
             str(self._model_path),
@@ -95,7 +125,9 @@ class VoiceEngine:
         )
 
         self._model_loaded = True
-        print(f"Model loaded in {time.time() - start:.2f}s")
+        elapsed = time.perf_counter() - start
+        logger.info("Model loaded in %.2fs", elapsed)
+        return elapsed
 
     def speak(
         self,
@@ -132,77 +164,89 @@ class VoiceEngine:
             result = engine.speak("Hello!", style="warmly and cheerfully")
             result = engine.speak("I'm thrilled!", emotion="excited")
         """
-        self._ensure_model_loaded()
+        t_total_start = time.perf_counter()
+        timing = SpeechTiming()
 
-        # Apply text normalization for better TTS pronunciation
+        # Model loading (lazy)
+        timing.model_load = self._ensure_model_loaded()
+
+        # Stage 1: Normalize
+        t0 = time.perf_counter()
         if normalize:
             text = normalize_text_func(text)
+        timing.normalize = time.perf_counter() - t0
 
-        # Apply emotion parameters (lowest priority -- overridden by style/preset/explicit args)
+        # Stage 2: Interpret (emotion -> style -> preset -> defaults)
+        t0 = time.perf_counter()
+
         if emotion:
             from voice_soundboard.emotions import get_emotion_voice_params
             emo_params = get_emotion_voice_params(emotion, voice=voice, speed=speed)
             voice = voice or emo_params.get("voice")
             speed = speed if speed is not None else emo_params.get("speed")
 
-        # Apply natural language style interpretation
         if style:
             from voice_soundboard.interpreter import apply_style_to_params
             voice, speed, preset = apply_style_to_params(style, voice, speed, preset)
 
-        # Resolve voice from preset if provided
         if preset and preset in VOICE_PRESETS:
             preset_config = VOICE_PRESETS[preset]
             voice = voice or preset_config["voice"]
             speed = speed if speed is not None else preset_config.get("speed", 1.0)
 
-        # Use defaults if not specified
         voice = voice or self.config.default_voice
         speed = speed if speed is not None else self.config.default_speed
+
+        timing.interpret = time.perf_counter() - t0
 
         # Validate voice
         available_voices = self._kokoro.get_voices()
         if voice not in available_voices:
-            raise ValueError(
-                f"Unknown voice: {voice}\n"
-                f"Available: {', '.join(sorted(available_voices)[:10])}..."
-            )
+            raise VoiceNotFoundError(voice, available_voices)
 
         # Validate and clamp speed
         speed = validate_speed(speed)
 
-        # Generate speech
-        start = time.time()
+        # Stage 3: Synthesize
+        t0 = time.perf_counter()
         samples, sample_rate = self._kokoro.create(text, voice=voice, speed=speed)
-        gen_time = time.time() - start
+        timing.synthesize = time.perf_counter() - t0
 
         # Calculate duration
         duration = len(samples) / sample_rate
-        realtime_factor = duration / gen_time if gen_time > 0 else 0
+        realtime_factor = duration / timing.synthesize if timing.synthesize > 0 else 0
 
-        # Generate output filename with security sanitization
+        # Stage 4: Save
+        t0 = time.perf_counter()
+
         if save_as:
-            # SECURITY: Sanitize user-provided filename to prevent path traversal
             base_name = sanitize_filename(save_as)
             filename = base_name if base_name.endswith('.wav') else f"{base_name}.wav"
         else:
-            # Create unique filename from text hash (using SHA-256, not MD5)
             text_hash = secure_hash(text, length=8)
             filename = f"{voice}_{text_hash}.wav"
 
-        # SECURITY: Safe path join prevents traversal attacks
         output_path = safe_join_path(self.config.output_dir, filename)
-
-        # Save audio
         sf.write(str(output_path), samples, sample_rate)
+
+        timing.save = time.perf_counter() - t0
+        timing.total = time.perf_counter() - t_total_start
+
+        logger.debug(
+            "speak() timing: total=%.3fs synthesize=%.3fs normalize=%.3fs "
+            "interpret=%.3fs save=%.3fs model_load=%.3fs",
+            timing.total, timing.synthesize, timing.normalize,
+            timing.interpret, timing.save, timing.model_load,
+        )
 
         return SpeechResult(
             audio_path=output_path,
             duration_seconds=duration,
-            generation_time=gen_time,
+            generation_time=timing.synthesize,
             voice_used=voice,
             sample_rate=sample_rate,
             realtime_factor=realtime_factor,
+            timing=timing,
         )
 
     def speak_raw(
@@ -226,7 +270,6 @@ class VoiceEngine:
         """
         self._ensure_model_loaded()
 
-        # Apply text normalization for better TTS pronunciation
         if normalize:
             text = normalize_text_func(text)
 
@@ -283,12 +326,13 @@ def quick_speak(
 
 if __name__ == "__main__":
     # Quick test
+    logging.basicConfig(level=logging.DEBUG, format="%(name)s %(message)s")
+
     engine = VoiceEngine()
 
     print("\n--- Testing Voice Engine ---")
     print(f"Available presets: {list(engine.list_presets().keys())}")
 
-    # Test different presets
     test_texts = [
         ("Hello! I'm your friendly AI assistant.", "assistant"),
         ("And so, our story begins in a distant land.", "storyteller"),
