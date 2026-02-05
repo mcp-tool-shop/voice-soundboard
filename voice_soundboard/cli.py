@@ -27,7 +27,7 @@ def cmd_speak(args: argparse.Namespace) -> None:
     if args.preset:
         kwargs["preset"] = args.preset
     if args.emotion:
-        kwargs["style"] = args.emotion
+        kwargs["emotion"] = args.emotion
     if args.speed is not None:
         kwargs["speed"] = args.speed
     if args.output:

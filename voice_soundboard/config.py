@@ -1,19 +1,59 @@
 """
 Configuration for Voice Soundboard.
+
+All paths default to a ``voice-soundboard/`` directory next to the
+project root (or wherever ``VOICE_SOUNDBOARD_DIR`` points).
+Override any path via environment variables:
+
+    VOICE_SOUNDBOARD_DIR   - base directory for output/cache/models
+    VOICE_SOUNDBOARD_MODELS - model directory (overrides base/models)
 """
 
+import logging
 from pathlib import Path
 from dataclasses import dataclass, field
 import os
 
+logger = logging.getLogger(__name__)
+
+
+def _default_base_dir() -> Path:
+    """Resolve the base directory for Voice Soundboard data."""
+    env = os.environ.get("VOICE_SOUNDBOARD_DIR")
+    if env:
+        return Path(env)
+    return Path.cwd()
+
+
+def _default_output_dir() -> Path:
+    return _default_base_dir() / "output"
+
+
+def _default_cache_dir() -> Path:
+    return _default_base_dir() / ".cache"
+
+
+def _default_model_dir() -> Path:
+    env = os.environ.get("VOICE_SOUNDBOARD_MODELS")
+    if env:
+        return Path(env)
+    return _default_base_dir() / "models"
+
 
 @dataclass
 class Config:
-    """Voice Soundboard configuration."""
+    """Voice Soundboard configuration.
 
-    # Paths
-    output_dir: Path = field(default_factory=lambda: Path("F:/AI/voice-soundboard/output"))
-    cache_dir: Path = field(default_factory=lambda: Path("F:/AI/voice-soundboard/.cache"))
+    All fields have sensible defaults. Override via constructor args
+    or environment variables (see module docstring).
+
+    Serializable to dict via ``config.to_dict()``.
+    """
+
+    # Paths (resolved from env vars or cwd)
+    output_dir: Path = field(default_factory=_default_output_dir)
+    cache_dir: Path = field(default_factory=_default_cache_dir)
+    model_dir: Path = field(default_factory=_default_model_dir)
 
     # TTS Engine settings
     device: str = "cuda"  # "cuda" or "cpu"
@@ -26,12 +66,12 @@ class Config:
     cache_models: bool = True
 
     def __post_init__(self):
-        """Ensure directories exist."""
+        """Ensure directories exist and detect device."""
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
-        # Windows RTX 5080 safety: disable xformers
-        os.environ["XFORMERS_DISABLED"] = "1"
+        # Windows safety: disable xformers (avoids CUDA errors on some GPUs)
+        os.environ.setdefault("XFORMERS_DISABLED", "1")
 
         # Auto-detect CUDA availability via ONNX Runtime
         if self.use_gpu:
@@ -41,10 +81,24 @@ class Config:
                 if "CUDAExecutionProvider" in providers:
                     self.device = "cuda"
                 else:
-                    print("CUDA not available in ONNX Runtime, using CPU")
+                    logger.info("CUDA not available in ONNX Runtime, using CPU")
                     self.device = "cpu"
             except ImportError:
                 self.device = "cpu"
+
+    def to_dict(self) -> dict:
+        """Serialize config to a JSON-compatible dict."""
+        return {
+            "output_dir": str(self.output_dir),
+            "cache_dir": str(self.cache_dir),
+            "model_dir": str(self.model_dir),
+            "device": self.device,
+            "default_voice": self.default_voice,
+            "default_speed": self.default_speed,
+            "sample_rate": self.sample_rate,
+            "use_gpu": self.use_gpu,
+            "cache_models": self.cache_models,
+        }
 
 
 # Available Kokoro voices (from actual model)

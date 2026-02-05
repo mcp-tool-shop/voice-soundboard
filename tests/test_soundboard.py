@@ -409,13 +409,14 @@ class TestPackage:
     """Tests for package exports."""
 
     def test_package_exports(self):
-        """TEST-PKG01: Package exports expected symbols."""
+        """TEST-PKG01: Package exports expected public API symbols."""
         import voice_soundboard
         expected = [
-            "VoiceEngine", "Config", "KOKORO_VOICES", "VOICE_PRESETS",
-            "play_audio", "stop_playback", "interpret_style",
-            "get_effect", "list_effects", "StreamingEngine",
-            "parse_ssml", "get_emotion_params", "list_emotions"
+            "VoiceEngine", "SpeechResult", "Config",
+            "KOKORO_VOICES", "VOICE_PRESETS", "quick_speak",
+            "play_audio", "stop_playback",
+            "get_effect", "play_effect", "list_effects",
+            "get_emotion_params", "list_emotions", "EMOTIONS",
         ]
         for symbol in expected:
             assert hasattr(voice_soundboard, symbol), f"Missing: {symbol}"
@@ -424,12 +425,16 @@ class TestPackage:
         """TEST-PKG02: Package has __version__."""
         import voice_soundboard
         assert hasattr(voice_soundboard, "__version__")
-        assert voice_soundboard.__version__ == "1.0.0"
+        assert voice_soundboard.__version__ == "1.1.0"
 
-    def test_has_websocket_flag(self):
-        """TEST-PKG03: _HAS_WEBSOCKET flag exists."""
-        import voice_soundboard
-        assert hasattr(voice_soundboard, "_HAS_WEBSOCKET")
+    def test_advanced_subpackages_importable(self):
+        """TEST-PKG03: Advanced subpackages are importable."""
+        from voice_soundboard.engines import TTSEngine
+        from voice_soundboard.dialogue import DialogueParser
+        from voice_soundboard.emotion import blend_emotions
+        from voice_soundboard.cloning import VoiceCloner
+        from voice_soundboard.presets import PresetCatalog
+        assert all([TTSEngine, DialogueParser, blend_emotions, VoiceCloner, PresetCatalog])
 
 
 # =============================================================================

@@ -62,8 +62,8 @@ class VoiceEngine:
         self._kokoro = None
         self._model_loaded = False
 
-        # Paths to model files
-        self._model_dir = Path("F:/AI/voice-soundboard/models")
+        # Paths to model files (resolved from Config.model_dir)
+        self._model_dir = self.config.model_dir
         self._model_path = self._model_dir / "kokoro-v1.0.onnx"
         self._voices_path = self._model_dir / "voices-v1.0.bin"
 
@@ -104,6 +104,7 @@ class VoiceEngine:
         preset: Optional[str] = None,
         speed: Optional[float] = None,
         style: Optional[str] = None,
+        emotion: Optional[str] = None,
         save_as: Optional[str] = None,
         normalize: bool = True,
     ) -> SpeechResult:
@@ -116,6 +117,8 @@ class VoiceEngine:
             preset: Voice preset name (e.g., "assistant", "narrator")
             speed: Speech speed multiplier (0.5-2.0, default 1.0)
             style: Natural language style hint (e.g., "warmly", "excitedly")
+            emotion: Emotion name (e.g., "happy", "calm", "excited").
+                    Sets voice and speed from emotion defaults.
             save_as: Optional filename (auto-generated if not provided)
             normalize: Apply text normalization for TTS edge cases (default True).
                       Expands currency ($100 -> one hundred dollars),
@@ -127,13 +130,20 @@ class VoiceEngine:
         Example:
             result = engine.speak("Hello!", voice="af_bella", speed=1.1)
             result = engine.speak("Hello!", style="warmly and cheerfully")
-            result = engine.speak("The price is $50", normalize=True)  # Speaks "fifty dollars"
+            result = engine.speak("I'm thrilled!", emotion="excited")
         """
         self._ensure_model_loaded()
 
         # Apply text normalization for better TTS pronunciation
         if normalize:
             text = normalize_text_func(text)
+
+        # Apply emotion parameters (lowest priority -- overridden by style/preset/explicit args)
+        if emotion:
+            from voice_soundboard.emotions import get_emotion_voice_params
+            emo_params = get_emotion_voice_params(emotion, voice=voice, speed=speed)
+            voice = voice or emo_params.get("voice")
+            speed = speed if speed is not None else emo_params.get("speed")
 
         # Apply natural language style interpretation
         if style:

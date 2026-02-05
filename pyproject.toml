@@ -90,10 +90,11 @@ packages = ["voice_soundboard"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-# Exclude generated/batch tests by default - run with: pytest -m generated
+# Default: run smoke + core tests only. Skip generated (research-tier).
 addopts = "-m 'not generated' --ignore=tests/generated"
 markers = [
-    "generated: marks tests as auto-generated (run with pytest -m generated)",
+    "smoke: fast tests with no model downloads (<5s total)",
+    "generated: auto-generated coverage tests (run with: pytest -m generated)",
 ]
 
 [tool.pyright]
