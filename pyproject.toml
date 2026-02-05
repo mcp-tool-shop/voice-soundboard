@@ -75,10 +75,10 @@ all = [
 voice-soundboard = "voice_soundboard.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/mcp-tool-shop/voice-soundboard"
-Repository = "https://github.com/mcp-tool-shop/voice-soundboard"
-Issues = "https://github.com/mcp-tool-shop/voice-soundboard/issues"
-Documentation = "https://github.com/mcp-tool-shop/voice-soundboard#readme"
+Homepage = "https://github.com/mcp-tool-shop-org/voice-soundboard"
+Repository = "https://github.com/mcp-tool-shop-org/voice-soundboard"
+Issues = "https://github.com/mcp-tool-shop-org/voice-soundboard/issues"
+Documentation = "https://github.com/mcp-tool-shop-org/voice-soundboard#readme"
 
 [build-system]
 requires = ["hatchling"]
